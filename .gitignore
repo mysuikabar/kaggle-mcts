@@ -2,4 +2,7 @@
 *.json
 *.parquet
 *.pyc
+*.zip
+
+data/
 outputs/
