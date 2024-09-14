@@ -12,5 +12,4 @@ class ModelFactory:
             raise ValueError(f"Unknown model type: {model_type}")
 
     def build(self) -> BaseModel:
-        params = self._params.copy()
-        return self._model_cls(**params)
+        return self._model_cls(self._params)

@@ -26,8 +26,8 @@ def run_group_cv(
     for fold, (idx_tr, idx_va) in enumerate(kf.split(X, y, groups), start=1):
         logger.info(f"Training fold {fold}")
 
-        X_tr, y_tr = X[idx_tr], y[idx_tr]
-        X_va, y_va = X[idx_va], y[idx_va]
+        X_tr, y_tr = X.iloc[idx_tr], y[idx_tr]
+        X_va, y_va = X.iloc[idx_va], y[idx_va]
 
         model = model_factory.build()
         model.fit(X_tr, y_tr, X_va, y_va)

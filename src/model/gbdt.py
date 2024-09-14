@@ -13,12 +13,10 @@ class LightGBMModel(BaseModel):
         self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
     ) -> None:
         params = self._params.copy()
-        categorical_features = params.pop("categorical_features")
         num_boost_round = params.pop("num_boost_round")
         early_stopping_rounds = params.pop("early_stopping_rounds")
 
-        data_tr = lgb.Dataset(X_tr, y_tr, categorical_feature=categorical_features)
-        data_va = lgb.Dataset(X_va, y_va, categorical_feature=categorical_features)
+        data_tr, data_va = lgb.Dataset(X_tr, y_tr), lgb.Dataset(X_va, y_va)
         valid_sets = [data_tr, data_va]
         valid_names = ["train", "valid"]
 
