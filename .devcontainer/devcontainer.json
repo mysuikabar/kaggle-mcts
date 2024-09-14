@@ -1,0 +1,23 @@
+{
+    "image": "gcr.io/kaggle-gpu-images/python",
+    "runArgs": ["--gpus", "all"],
+    "features": {
+        "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-toolsai.jupyter",
+                "ms-python.mypy-type-checker",
+                "charliermarsh.ruff",
+                "mhutchie.git-graph",
+                "wayou.vscode-todo-highlight"
+            ]
+        }
+    },
+    "remoteEnv": {
+        "PYTHONPATH": "${containerEnv:PYTHONPATH}:${containerWorkspaceFolder}/src",
+        "KAGGLE_CONFIG_DIR": "${containerWorkspaceFolder}/.kaggle"
+    }
+}
