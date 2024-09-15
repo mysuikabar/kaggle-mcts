@@ -9,12 +9,13 @@ import polars as pl
 import kaggle_evaluation.mcts_inference_server
 from consts import REPO_ROOT
 from ml.model.base import BaseModel
-from process.process import preprocess
+from process.process import Preprocessor
 
 
 @dataclass
 class Config:
-    model_dir: Path = REPO_ROOT / "outputs" / "trial"
+    processor_path: Path = REPO_ROOT / "outputs" / "trial" / "processor.pickle"
+    model_dir: Path = REPO_ROOT / "outputs" / "trial" / "models"
     test_path: Path = REPO_ROOT / "data" / "test.csv"
     submission_path: Path = REPO_ROOT / "data" / "sample_submission.csv"
 
@@ -31,7 +32,8 @@ def predict_models(X: np.ndarray, models: list[BaseModel]) -> np.ndarray:
 
 
 def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
-    X, _, _ = preprocess(test)
+    processor = Preprocessor.load(config.processor_path)
+    X = processor.transform(test)
     models = load_models(config.model_dir)
     pred = predict_models(X, models)
     return submission.with_columns(pl.Series("utility_agent1", pred))

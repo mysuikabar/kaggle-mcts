@@ -1,79 +1,99 @@
+import pickle
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import polars as pl
+from typing_extensions import Self
+
+from .utils import CategoricalConverter, constant_columns
 
 
-def _drop_constant_columns(df: pl.DataFrame) -> pl.DataFrame:
-    constant_columns = np.array(df.columns)[
-        df.select(pl.all().n_unique() == 1).to_numpy().ravel()
-    ]
-    drop_columns = list(constant_columns) + ["Id"]
+class Preprocessor:
+    def __init__(self) -> None:
+        self._cat_converter = CategoricalConverter()
 
-    return df.drop(drop_columns)
+    @staticmethod
+    def _create_features(df: pl.DataFrame) -> pl.DataFrame:
+        df_feature = df.with_columns(
+            pl.col("agent1")
+            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 1)
+            .alias("p1_selection"),
+            pl.col("agent1")
+            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 2)
+            .alias("p1_exploration")
+            .cast(pl.Float32),
+            pl.col("agent1")
+            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 3)
+            .alias("p1_playout"),
+            pl.col("agent1")
+            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 4)
+            .alias("p1_bounds"),
+            pl.col("agent2")
+            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 1)
+            .alias("p2_selection"),
+            pl.col("agent2")
+            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 2)
+            .alias("p2_exploration")
+            .cast(pl.Float32),
+            pl.col("agent2")
+            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 3)
+            .alias("p2_playout"),
+            pl.col("agent2")
+            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 4)
+            .alias("p2_bounds"),
+        ).drop(
+            [
+                "GameRulesetName",
+                "EnglishRules",
+                "LudRules",
+                "num_wins_agent1",
+                "num_draws_agent1",
+                "num_losses_agent1",
+                "utility_agent1",
+            ],
+            strict=False,
+        )
 
+        return df_feature
 
-def _create_features(df: pl.DataFrame) -> pl.DataFrame:
-    df_feature = df.with_columns(
-        pl.col("agent1")
-        .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 1)
-        .alias("p1_selection"),
-        pl.col("agent1")
-        .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 2)
-        .alias("p1_exploration")
-        .cast(pl.Float32),
-        pl.col("agent1")
-        .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 3)
-        .alias("p1_playout"),
-        pl.col("agent1").str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 4).alias("p1_bounds"),
-        pl.col("agent2")
-        .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 1)
-        .alias("p2_selection"),
-        pl.col("agent2")
-        .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 2)
-        .alias("p2_exploration")
-        .cast(pl.Float32),
-        pl.col("agent2")
-        .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 3)
-        .alias("p2_playout"),
-        pl.col("agent2").str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 4).alias("p2_bounds"),
-    ).drop(
-        [
-            "GameRulesetName",
-            "EnglishRules",
-            "LudRules",
-            "num_wins_agent1",
-            "num_draws_agent1",
-            "num_losses_agent1",
-            "utility_agent1",
-        ],
-        strict=False,
-    )
+    def fit_transform(self, df: pl.DataFrame) -> pd.DataFrame:
+        # get group label
+        self._group_label = df.select("GameRulesetName").to_numpy()
 
-    return df_feature
+        # feature engineering
+        self._drop_columns = ["Id"] + constant_columns(df)
+        df_feature = df.drop(self._drop_columns).pipe(self._create_features).to_pandas()
 
+        # convert dtype to categorical
+        self._cat_converter.fit(df_feature)
+        df_feature = self._cat_converter.fit_transform(df_feature)
 
-def _convert_to_categorical(df: pd.DataFrame) -> pd.DataFrame:
-    cat_mapping = {
-        feature: pd.CategoricalDtype(categories=list(set(df[feature])))
-        for feature in df.columns[df.dtypes == object]  # noqa
-    }
-    return df.astype(cat_mapping)
+        return df_feature
 
+    def transform(self, df: pl.DataFrame) -> pd.DataFrame:
+        df_feature = df.drop(self._drop_columns).pipe(self._create_features).to_pandas()
+        df_feature = self._cat_converter.transform(df_feature)
 
-def preprocess(
-    df: pl.DataFrame,
-) -> tuple[pd.DataFrame, np.ndarray | None, np.ndarray | None]:
-    df_feature = (
-        df.pipe(_drop_constant_columns)
-        .pipe(_create_features)
-        .to_pandas()
-        .pipe(_convert_to_categorical)
-    )
+        return df_feature
 
-    if "utility_agent1" in df.columns:
-        target = df.select("utility_agent1").to_numpy().ravel()
-        groups = df.select("GameRulesetName").to_numpy()
-    else:
-        target, groups = None, None
+    @property
+    def get_group_label(self) -> np.ndarray:
+        return self._group_label.copy()
 
-    return df_feature, target, groups
+    def save(self, filepath: str | Path) -> None:
+        with open(filepath, "wb") as f:
+            pickle.dump(self, f)
+
+    @classmethod
+    def load(cls, filepath: str | Path) -> Self:
+        with open(filepath, "rb") as file:
+            processor = pickle.load(file)
+
+        if not isinstance(processor, cls):
+            raise TypeError(
+                f"Loaded object type does not match expected type. "
+                f"Expected: {cls.__name__}, Actual: {type(processor).__name__}"
+            )
+
+        return processor
