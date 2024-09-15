@@ -6,8 +6,8 @@ from hydra.core.config_store import ConfigStore
 from sklearn.metrics import mean_squared_error
 
 from config import Config
-from model.cv import run_group_cv
-from model.factory import ModelFactory
+from ml.cv import run_group_cv
+from ml.model.factory import ModelFactory
 from process.process import preprocess
 
 logger = getLogger(__name__)

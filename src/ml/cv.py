@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import GroupKFold
 
-from .base import BaseModel
-from .factory import ModelFactory
+from .model.base import BaseModel
+from .model.factory import ModelFactory
 
 logger = getLogger(__name__)
 
