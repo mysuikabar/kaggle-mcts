@@ -21,9 +21,8 @@ def main(config: Config) -> None:
     # preprocess
     dataset = pl.read_csv(config.data_path).head(1000)
     X, y, groups = preprocess(dataset)
-
     # train & evaluate
-    model_factory = ModelFactory(config.model_type, dict(config.model_params))  # type: ignore
+    model_factory = ModelFactory(config.model_type, config.model_config)
     models, oof = run_group_cv(X, y, model_factory, groups)  # type: ignore
 
     rmse = mean_squared_error(y, oof, squared=False)

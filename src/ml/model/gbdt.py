@@ -1,18 +1,35 @@
+from dataclasses import dataclass
+
 import lightgbm as lgb
 import numpy as np
 
-from .base import BaseModel
+from ..utils import to_dict
+from .base import BaseConfig, BaseModel
+
+
+@dataclass
+class LightGBMConfig(BaseConfig):
+    objective: str = "regression"
+    metric: str = "rmse"
+    boosting_type: str = "gbdt"
+    num_leaves: int = 30
+    learning_rate: float = 0.05
+    feature_fraction: float = 0.9
+    bagging_fraction: float = 0.8
+    bagging_freq: int = 5
+    num_boost_round: int = 1000
+    early_stopping_rounds: int = 10
 
 
 class LightGBMModel(BaseModel):
-    def __init__(self, params: dict):
-        self._params = params.copy()
+    def __init__(self, config: LightGBMConfig) -> None:
+        super().__init__(config)
         self._model: lgb.Booster | None = None
 
     def fit(
         self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
     ) -> None:
-        params = self._params.copy()
+        params = to_dict(self._config)
         num_boost_round = params.pop("num_boost_round")
         early_stopping_rounds = params.pop("early_stopping_rounds")
 

@@ -1,12 +1,21 @@
 import pickle
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 from typing_extensions import Self
 
 
+@dataclass
+class BaseConfig:
+    pass
+
+
 class BaseModel(ABC):
+    def __init__(self, config: BaseConfig) -> None:
+        self._config = config
+
     @abstractmethod
     def fit(
         self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
