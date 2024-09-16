@@ -25,9 +25,10 @@ class FeatureExpressions(UserDict):
         )
 
 
+# TODO: feature_storeが見つからなかったときの処理 (初期化時に判定する？)
 class FeatureStore:
     def __init__(self, dir_path: Path = REPO_ROOT / "data" / "feature_store") -> None:
-        self._dir_path = dir_path / "features"
+        self._dir_path = dir_path
         self._dir_path.mkdir(parents=True, exist_ok=True)
 
     def save(self, df: pl.DataFrame, feature_name: str) -> None:
@@ -43,22 +44,29 @@ class FeatureStore:
 
 
 class FeatureProcessor:
-    def __init__(self, feature_store: FeatureStore | None = None) -> None:
+    def __init__(
+        self,
+        feature_expressions: FeatureExpressions,
+        feature_store: FeatureStore | None = None,
+    ) -> None:
+        self._feature_expressions = feature_expressions
         self._feature_store = feature_store
 
     def run(
-        self, df: pl.DataFrame, feature_expressions: FeatureExpressions
+        self,
+        df: pl.DataFrame,
     ) -> pl.DataFrame:
         df_result = df.clone()
 
+        # TODO: feature_storeが見つからなかったときの処理
         if self._feature_store is None:
             expressions = [
-                expr for exprs in feature_expressions.values() for expr in exprs
+                expr for exprs in self._feature_expressions.values() for expr in exprs
             ]
             return df_result.with_columns(expressions)
 
         # when feature store is given
-        for feature_name, expressions in feature_expressions.items():
+        for feature_name, expressions in self._feature_expressions.items():
             try:
                 feature = self._feature_store.load(feature_name)
                 df_result = df_result.hstack(feature)

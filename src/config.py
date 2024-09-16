@@ -16,7 +16,7 @@ hydra_config = {
 }
 
 
-model_confi = LightGBMConfig(
+model_config = LightGBMConfig(
     objective="regression",
     metric="rmse",
     boosting_type="gbdt",
@@ -31,9 +31,17 @@ model_confi = LightGBMConfig(
 
 
 @dataclass
+class PreprocessConfig:
+    use_features: list[str] = field(default_factory=lambda: ["agent_property"])
+    feature_store_dir: Path = REPO_ROOT / "data" / "feature_store"
+
+
+@dataclass
 class Config:
+    seed: int = 42
     data_path: Path = REPO_ROOT / "data" / "raw" / "train_mini.csv"
+    preprocess: PreprocessConfig = PreprocessConfig()
     model_type: str = "lightgbm"
-    model_config: BaseConfig = LightGBMConfig()
+    model_config: BaseConfig = model_config
     model_output_dir: Path = Path("models")
     hydra: Any = field(default_factory=lambda: hydra_config)

@@ -2,9 +2,9 @@ import polars as pl
 
 from .manager import FeatureExpressions
 
-feature_manager = FeatureExpressions()
+feature_expressions_master = FeatureExpressions()
 
-feature_manager["agent_info"] = [
+feature_expressions_master["agent_property"] = [
     pl.col("agent1").str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 1).alias("p1_selection"),
     pl.col("agent1")
     .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 2)

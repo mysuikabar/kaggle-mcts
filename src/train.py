@@ -1,4 +1,5 @@
 from logging import getLogger
+from pathlib import Path
 
 import hydra
 import polars as pl
@@ -8,6 +9,8 @@ from sklearn.metrics import mean_squared_error
 from config import Config
 from ml.cv import run_group_cv
 from ml.model.factory import ModelFactory
+from process.feature.features import feature_expressions_master
+from process.feature.manager import FeatureProcessor, FeatureStore
 from process.process import Preprocessor
 
 logger = getLogger(__name__)
@@ -16,13 +19,23 @@ cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
 
 
+def create_preprocessor(
+    use_features: list[str], feature_store_dir: Path
+) -> Preprocessor:
+    feature_expressions = feature_expressions_master.filter(use_features)
+    feature_store = FeatureStore(feature_store_dir)
+    feature_processor = FeatureProcessor(feature_expressions, feature_store)
+
+    return Preprocessor(feature_processor)
+
+
 @hydra.main(version_base=None, config_name="config")
 def main(config: Config) -> None:
     # preprocess
     df = pl.read_csv(config.data_path).head(1000)
     y = df.select("utility_agent1").to_numpy().ravel()
 
-    processor = Preprocessor()
+    processor = create_preprocessor(**config.preprocess)  # type: ignore
     X, groups = processor.fit_transform(df), processor.group_label
     processor.save("processor.pickle")
 

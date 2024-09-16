@@ -5,76 +5,46 @@ import pandas as pd
 import polars as pl
 from typing_extensions import Self
 
+from .feature.manager import FeatureProcessor
 from .utils import CategoricalConverter, constant_columns
 
 
 class Preprocessor:
-    def __init__(self) -> None:
+    def __init__(self, feature_processor: FeatureProcessor) -> None:
+        self._feature_processor = feature_processor
         self._cat_converter = CategoricalConverter()
-
-    @staticmethod
-    def _create_features(df: pl.DataFrame) -> pl.DataFrame:
-        df_feature = df.with_columns(
-            pl.col("agent1")
-            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 1)
-            .alias("p1_selection"),
-            pl.col("agent1")
-            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 2)
-            .alias("p1_exploration")
-            .cast(pl.Float32),
-            pl.col("agent1")
-            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 3)
-            .alias("p1_playout"),
-            pl.col("agent1")
-            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 4)
-            .alias("p1_bounds"),
-            pl.col("agent2")
-            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 1)
-            .alias("p2_selection"),
-            pl.col("agent2")
-            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 2)
-            .alias("p2_exploration")
-            .cast(pl.Float32),
-            pl.col("agent2")
-            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 3)
-            .alias("p2_playout"),
-            pl.col("agent2")
-            .str.extract(r"MCTS-(.*)-(.*)-(.*)-(.*)", 4)
-            .alias("p2_bounds"),
-        ).drop(
-            [
-                "GameRulesetName",
-                "EnglishRules",
-                "LudRules",
-                "num_wins_agent1",
-                "num_draws_agent1",
-                "num_losses_agent1",
-                "utility_agent1",
-            ],
-            strict=False,
-        )
-
-        return df_feature
 
     def fit_transform(self, df: pl.DataFrame) -> pd.DataFrame:
         # get group label
         self.group_label = df.select("GameRulesetName").to_numpy()
 
         # feature engineering
-        self._drop_columns = ["Id"] + constant_columns(df)
-        df_feature = df.drop(self._drop_columns).pipe(self._create_features).to_pandas()
+        df_result = self._feature_processor.run(df)
+
+        # drop columns
+        self._drop_columns = [
+            "Id",
+            "GameRulesetName",
+            "EnglishRules",
+            "LudRules",
+            "num_wins_agent1",
+            "num_draws_agent1",
+            "num_losses_agent1",
+            "utility_agent1",
+        ] + constant_columns(df_result)
+        df_result = df_result.drop(self._drop_columns, strict=False)
 
         # convert dtype to categorical
-        self._cat_converter.fit(df_feature)
-        df_feature = self._cat_converter.fit_transform(df_feature)
+        df_result = self._cat_converter.fit_transform(df_result.to_pandas())
 
-        return df_feature
+        return df_result
 
     def transform(self, df: pl.DataFrame) -> pd.DataFrame:
-        df_feature = df.drop(self._drop_columns).pipe(self._create_features).to_pandas()
-        df_feature = self._cat_converter.transform(df_feature)
+        df_result = self._feature_processor.run(df)
+        df_result = df_result.drop(self._drop_columns, strict=False)
+        df_result = self._cat_converter.transform(df_result)
 
-        return df_feature
+        return df_result
 
     def save(self, filepath: str | Path) -> None:
         with open(filepath, "wb") as f:
@@ -92,3 +62,4 @@ class Preprocessor:
             )
 
         return processor
+
