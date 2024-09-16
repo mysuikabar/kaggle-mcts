@@ -12,7 +12,8 @@
                 "ms-python.mypy-type-checker",
                 "charliermarsh.ruff",
                 "mhutchie.git-graph",
-                "wayou.vscode-todo-highlight"
+                "wayou.vscode-todo-highlight",
+                "ms-vscode.makefile-tools"
             ]
         }
     },
