@@ -25,7 +25,6 @@ class FeatureExpressions(UserDict):
         )
 
 
-# TODO: feature_storeが見つからなかったときの処理 (初期化時に判定する？)
 class FeatureStore:
     def __init__(self, dir_path: Path = REPO_ROOT / "data" / "feature_store") -> None:
         self._dir_path = dir_path
@@ -58,7 +57,6 @@ class FeatureProcessor:
     ) -> pl.DataFrame:
         df_result = df.clone()
 
-        # TODO: feature_storeが見つからなかったときの処理
         if self._feature_store is None:
             expressions = [
                 expr for exprs in self._feature_expressions.values() for expr in exprs
@@ -76,3 +74,6 @@ class FeatureProcessor:
                 df_result = df_result.hstack(new_feature)
 
         return df_result
+
+    def disable_feature_store(self) -> None:
+        self._feature_store = None

@@ -33,9 +33,12 @@ def predict_models(X: np.ndarray, models: list[BaseModel]) -> np.ndarray:
 
 def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
     processor = Preprocessor.load(config.processor_path)
+    processor.disable_feature_store()
     X = processor.transform(test)
+
     models = load_models(config.model_dir)
     pred = predict_models(X, models)
+
     return submission.with_columns(pl.Series("utility_agent1", pred))
 
 

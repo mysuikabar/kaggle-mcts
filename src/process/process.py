@@ -42,9 +42,12 @@ class Preprocessor:
     def transform(self, df: pl.DataFrame) -> pd.DataFrame:
         df_result = self._feature_processor.run(df)
         df_result = df_result.drop(self._drop_columns, strict=False)
-        df_result = self._cat_converter.transform(df_result)
+        df_result = self._cat_converter.transform(df_result.to_pandas())
 
         return df_result
+
+    def disable_feature_store(self) -> None:
+        self._feature_processor.disable_feature_store()
 
     def save(self, filepath: str | Path) -> None:
         with open(filepath, "wb") as f:
@@ -62,4 +65,3 @@ class Preprocessor:
             )
 
         return processor
-
