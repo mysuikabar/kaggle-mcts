@@ -1,15 +1,18 @@
 import glob
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import polars as pl
 
-import kaggle_evaluation.mcts_inference_server
 from consts import REPO_ROOT
 from ml.model.base import BaseModel
 from process.process import Preprocessor
+
+sys.path.append(str(REPO_ROOT / "data" / "raw"))
+import kaggle_evaluation.mcts_inference_server  # type: ignore
 
 
 @dataclass
