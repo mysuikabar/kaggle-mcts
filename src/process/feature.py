@@ -4,8 +4,6 @@ from pathlib import Path
 
 import polars as pl
 
-from consts import REPO_ROOT
-
 logger = getLogger(__name__)
 
 
@@ -29,7 +27,7 @@ class FeatureExpressions(UserDict):
 
 
 class FeatureStore:
-    def __init__(self, dir_path: Path = REPO_ROOT / "data" / "feature_store") -> None:
+    def __init__(self, dir_path: Path) -> None:
         self._dir_path = dir_path
         self._dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -57,10 +55,7 @@ class FeatureProcessor:
         self._feature_expressions = feature_expressions
         self._feature_store = feature_store
 
-    def run(
-        self,
-        df: pl.DataFrame,
-    ) -> pl.DataFrame:
+    def run(self, df: pl.DataFrame) -> pl.DataFrame:
         df_result = df.clone()
 
         if self._feature_store is None:
