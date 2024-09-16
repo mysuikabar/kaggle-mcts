@@ -1,7 +1,6 @@
 import pickle
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import polars as pl
 from typing_extensions import Self
@@ -59,7 +58,7 @@ class Preprocessor:
 
     def fit_transform(self, df: pl.DataFrame) -> pd.DataFrame:
         # get group label
-        self._group_label = df.select("GameRulesetName").to_numpy()
+        self.group_label = df.select("GameRulesetName").to_numpy()
 
         # feature engineering
         self._drop_columns = ["Id"] + constant_columns(df)
@@ -76,10 +75,6 @@ class Preprocessor:
         df_feature = self._cat_converter.transform(df_feature)
 
         return df_feature
-
-    @property
-    def get_group_label(self) -> np.ndarray:
-        return self._group_label.copy()
 
     def save(self, filepath: str | Path) -> None:
         with open(filepath, "wb") as f:

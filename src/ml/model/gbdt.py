@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import lightgbm as lgb
 import numpy as np
+from typing_extensions import Self
 
 from ..utils import to_dict
 from .base import BaseConfig, BaseModel
@@ -28,7 +29,7 @@ class LightGBMModel(BaseModel):
 
     def fit(
         self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
-    ) -> None:
+    ) -> Self:
         params = to_dict(self._config)
         num_boost_round = params.pop("num_boost_round")
         early_stopping_rounds = params.pop("early_stopping_rounds")
@@ -48,6 +49,8 @@ class LightGBMModel(BaseModel):
                 lgb.log_evaluation(period=100),
             ],
         )
+
+        return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         if self._model is None:

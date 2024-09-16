@@ -19,8 +19,8 @@ class BaseModel(ABC):
     @abstractmethod
     def fit(
         self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
-    ) -> None:
-        pass
+    ) -> Self:
+        return self
 
     @abstractmethod
     def predict(self, X: np.ndarray) -> np.ndarray:

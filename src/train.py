@@ -23,13 +23,12 @@ def main(config: Config) -> None:
     y = df.select("utility_agent1").to_numpy().ravel()
 
     processor = Preprocessor()
-    X = processor.fit_transform(df)
-    groups = processor.get_group_label
+    X, groups = processor.fit_transform(df), processor.group_label
     processor.save("processor.pickle")
 
     # train & evaluate
     model_factory = ModelFactory(config.model_type, config.model_config)
-    models, oof = run_group_cv(X, y, model_factory, groups)  # type: ignore
+    models, oof = run_group_cv(X, y, model_factory, groups)
 
     rmse = mean_squared_error(y, oof, squared=False)
     logger.info(f"mse: {rmse}")
