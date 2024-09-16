@@ -16,8 +16,8 @@ from process.process import Preprocessor
 class Config:
     processor_path: Path = REPO_ROOT / "outputs" / "trial" / "processor.pickle"
     model_dir: Path = REPO_ROOT / "outputs" / "trial" / "models"
-    test_path: Path = REPO_ROOT / "data" / "test.csv"
-    submission_path: Path = REPO_ROOT / "data" / "sample_submission.csv"
+    test_path: Path = REPO_ROOT / "data" / "raw" / "test.csv"
+    submission_path: Path = REPO_ROOT / "data" / "raw" / "sample_submission.csv"
 
 
 config = Config()

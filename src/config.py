@@ -32,7 +32,7 @@ model_confi = LightGBMConfig(
 
 @dataclass
 class Config:
-    data_path: Path = REPO_ROOT / "data" / "train_mini.csv"
+    data_path: Path = REPO_ROOT / "data" / "raw" / "train_mini.csv"
     model_type: str = "lightgbm"
     model_config: BaseConfig = LightGBMConfig()
     model_output_dir: Path = Path("models")
