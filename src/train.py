@@ -12,6 +12,7 @@ from ml.cv import run_group_cv
 from ml.model.factory import ModelFactory
 from process.feature import FeatureProcessor, FeatureStore
 from process.process import Preprocessor
+from utils.seed import seed_everything
 
 logger = getLogger(__name__)
 
@@ -31,6 +32,8 @@ def create_preprocessor(
 
 @hydra.main(version_base=None, config_name="config")
 def main(config: Config) -> None:
+    seed_everything(config.seed)
+
     # preprocess
     df = pl.read_csv(config.data_path).head(1000)
     y = df.select("utility_agent1").to_numpy().ravel()
