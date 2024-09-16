@@ -14,7 +14,8 @@
         "notebook.source.organizeImports": "explicit"
     },
     "mypy-type-checker.args": [
-        "--ignore-missing-imports"
+        "--ignore-missing-imports",
+        "--disallow-untyped-defs"
     ],
     "interactiveWindow.executeWithShiftEnter": false,
     "python.REPL.sendToNativeREPL": false
