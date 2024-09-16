@@ -1,9 +1,12 @@
 from collections import UserDict
+from logging import getLogger
 from pathlib import Path
 
 import polars as pl
 
 from consts import REPO_ROOT
+
+logger = getLogger(__name__)
 
 
 class FeatureExpressions(UserDict):
@@ -33,12 +36,15 @@ class FeatureStore:
     def save(self, df: pl.DataFrame, feature_name: str) -> None:
         file_path = self._dir_path / f"{feature_name}.parquet"
         df.write_parquet(file_path)
+        logger.info(f"Feature '{feature_name}' saved to {file_path}")
 
     def load(self, feature_name: str) -> pl.DataFrame:
         file_path = self._dir_path / f"{feature_name}.parquet"
         if file_path.exists():
+            logger.info(f"Loading feature '{feature_name}' from {file_path}")
             return pl.read_parquet(file_path)
         else:
+            logger.error(f"Feature '{feature_name}' not found at {file_path}")
             raise FileNotFoundError(f"Feature {feature_name} not found.")
 
 
