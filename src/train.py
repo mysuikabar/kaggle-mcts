@@ -7,10 +7,10 @@ from hydra.core.config_store import ConfigStore
 from sklearn.metrics import mean_squared_error
 
 from config import Config
+from features import feature_expressions_master
 from ml.cv import run_group_cv
 from ml.model.factory import ModelFactory
-from process.feature.features import feature_expressions_master
-from process.feature.manager import FeatureProcessor, FeatureStore
+from process.feature import FeatureProcessor, FeatureStore
 from process.process import Preprocessor
 
 logger = getLogger(__name__)

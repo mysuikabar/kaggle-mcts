@@ -5,7 +5,7 @@ import pandas as pd
 import polars as pl
 from typing_extensions import Self
 
-from .feature.manager import FeatureProcessor
+from .feature import FeatureProcessor
 from .utils import CategoricalConverter, constant_columns
 
 

@@ -1,6 +1,6 @@
 import polars as pl
 
-from .manager import FeatureExpressions
+from process.feature import FeatureExpressions
 
 feature_expressions_master = FeatureExpressions()
 
