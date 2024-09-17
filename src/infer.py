@@ -9,6 +9,7 @@ import polars as pl
 
 from consts import REPO_ROOT
 from ml.model.base import BaseModel
+from ml.model.factory import ModelFactory
 from process.process import Preprocessor
 
 sys.path.append(str(REPO_ROOT / "data" / "raw"))
@@ -27,7 +28,7 @@ config = Config()
 
 
 def load_models(model_dir: Path) -> list[BaseModel]:
-    return [BaseModel.load(path) for path in glob.glob(str(model_dir / "*.pickle"))]
+    return [ModelFactory.load(path) for path in glob.glob(str(model_dir / "*.pickle"))]
 
 
 def predict_models(X: np.ndarray, models: list[BaseModel]) -> np.ndarray:
