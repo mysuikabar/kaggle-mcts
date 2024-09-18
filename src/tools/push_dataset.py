@@ -8,6 +8,9 @@ from kaggle.api.kaggle_api_extended import KaggleApi
 def create_metadata(
     dataset_dir: Path, user_name: str, title: str, description: str | None = None
 ) -> None:
+    """
+    Create metadata for a Kaggle dataset.
+    """
     metadata = {
         "title": title,
         "id": f"{user_name}/{title}",
@@ -21,6 +24,9 @@ def create_metadata(
 
 
 def upload_dataset(dataset_dir: Path, new: bool) -> None:
+    """
+    Upload a dataset to Kaggle.
+    """
     api = KaggleApi()
     api.authenticate()
 
