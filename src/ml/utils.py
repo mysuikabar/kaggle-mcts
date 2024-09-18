@@ -4,9 +4,9 @@ from typing import Any
 
 def to_dict(obj: Any) -> dict[str, Any]:
     if isinstance(obj, dict):
-        return obj
+        return dict(obj)
     elif is_dataclass(obj):
-        return asdict(obj)  # type: ignore
+        return dict(asdict(obj))  # type: ignore
     else:
         try:
             return dict(obj)

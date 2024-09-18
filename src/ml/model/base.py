@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 from typing_extensions import Self
 
+from ..utils import to_dict
+
 
 @dataclass
 class BaseConfig:
@@ -14,7 +16,7 @@ class BaseConfig:
 
 class BaseModel(ABC):
     def __init__(self, config: BaseConfig) -> None:
-        self._config = config
+        self._params = to_dict(config)
 
     @abstractmethod
     def fit(

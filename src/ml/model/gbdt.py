@@ -4,7 +4,6 @@ import lightgbm as lgb
 import numpy as np
 from typing_extensions import Self
 
-from ..utils import to_dict
 from .base import BaseConfig, BaseModel
 
 
@@ -30,7 +29,7 @@ class LightGBMModel(BaseModel):
     def fit(
         self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
     ) -> Self:
-        params = to_dict(self._config)
+        params = self._params.copy()
         num_boost_round = params.pop("num_boost_round")
         early_stopping_rounds = params.pop("early_stopping_rounds")
 
