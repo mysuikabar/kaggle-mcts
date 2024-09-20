@@ -1,6 +1,8 @@
 {
-    "image": "gcr.io/kaggle-gpu-images/python",
-    "runArgs": ["--gpus", "all"],
+    "name": "Kaggle Python Environment",
+    "dockerComposeFile": "../docker-compose.yaml",
+    "service": "dev",
+    "workspaceFolder": "/workspace",
     "features": {
         "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
     },
@@ -13,12 +15,9 @@
                 "charliermarsh.ruff",
                 "mhutchie.git-graph",
                 "wayou.vscode-todo-highlight",
-                "ms-vscode.makefile-tools"
+                "ms-vscode.makefile-tools",
+                "ms-azuretools.vscode-docker"
             ]
         }
-    },
-    "remoteEnv": {
-        "PYTHONPATH": "${containerEnv:PYTHONPATH}:${containerWorkspaceFolder}/src",
-        "KAGGLE_CONFIG_DIR": "${containerWorkspaceFolder}/.kaggle"
     }
 }
