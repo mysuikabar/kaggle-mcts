@@ -1,6 +1,4 @@
-USER_NAME = suikabar
-COMPETITION = um-game-playing-strength-of-mcts-variants
-DATASET = mcts-models
+include .env
 
 .PHONY: create_dataset push_dataset push_notebook
 
