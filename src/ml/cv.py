@@ -1,4 +1,6 @@
+import glob
 from logging import getLogger
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -36,3 +38,11 @@ def run_group_cv(
         models.append(model)
 
     return models, oof
+
+
+def load_models(model_dir: Path) -> list[BaseModel]:
+    return [ModelFactory.load(path) for path in glob.glob(str(model_dir / "*.pickle"))]
+
+
+def predict_models(models: list[BaseModel], X: np.ndarray) -> np.ndarray:
+    return np.stack([model.predict(X) for model in models]).mean(axis=0)
