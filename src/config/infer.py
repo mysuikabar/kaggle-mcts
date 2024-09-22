@@ -6,7 +6,7 @@ from consts import REPO_ROOT
 
 
 @dataclass
-class InferConfig:
+class Config:
     processor_path: Path
     model_dir: Path
     test_path: Path
@@ -14,7 +14,7 @@ class InferConfig:
     evaluation_api_path: Path | None = None
 
 
-_config_local_env = InferConfig(
+_config_local_env = Config(
     processor_path=REPO_ROOT / "outputs" / "trial" / "processor.pickle",
     model_dir=REPO_ROOT / "outputs" / "trial" / "models",
     test_path=REPO_ROOT / "data" / "raw" / "test.csv",
@@ -22,7 +22,7 @@ _config_local_env = InferConfig(
     evaluation_api_path=REPO_ROOT / "data" / "raw",
 )
 
-_config_kaggle_env = InferConfig(
+_config_kaggle_env = Config(
     processor_path=Path("/kaggle/input/mcts-models/processor.pickle"),
     model_dir=Path("/kaggle/input/mcts-models/models"),
     test_path=Path("/kaggle/input/um-game-playing-strength-of-mcts-variants/test.csv"),
