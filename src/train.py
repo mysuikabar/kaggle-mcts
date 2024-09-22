@@ -6,7 +6,7 @@ import polars as pl
 from hydra.core.config_store import ConfigStore
 from sklearn.metrics import mean_squared_error
 
-from config import Config
+from config.train import TrainConfig
 from features import feature_expressions_master
 from ml.cv import run_group_cv
 from ml.model.factory import ModelFactory
@@ -17,7 +17,7 @@ from utils.seed import seed_everything
 logger = getLogger(__name__)
 
 cs = ConfigStore.instance()
-cs.store(name="config", node=Config)
+cs.store(name="config", node=TrainConfig)
 
 
 def create_preprocessor(
@@ -31,7 +31,7 @@ def create_preprocessor(
 
 
 @hydra.main(version_base=None, config_name="config")
-def main(config: Config) -> None:
+def main(config: TrainConfig) -> None:
     seed_everything(config.seed)
 
     # preprocess

@@ -1,12 +1,12 @@
 import glob
 import os
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import polars as pl
 
+from config.infer import InferConfig
 from consts import REPO_ROOT
 from ml.model.base import BaseModel
 from ml.model.factory import ModelFactory
@@ -15,16 +15,7 @@ from process.process import Preprocessor
 sys.path.append(str(REPO_ROOT / "data" / "raw"))
 import kaggle_evaluation.mcts_inference_server  # type: ignore
 
-
-@dataclass
-class Config:
-    processor_path: Path = REPO_ROOT / "outputs" / "trial" / "processor.pickle"
-    model_dir: Path = REPO_ROOT / "outputs" / "trial" / "models"
-    test_path: Path = REPO_ROOT / "data" / "raw" / "test.csv"
-    submission_path: Path = REPO_ROOT / "data" / "raw" / "sample_submission.csv"
-
-
-config = Config()
+config = InferConfig()
 
 
 def load_models(model_dir: Path) -> list[BaseModel]:

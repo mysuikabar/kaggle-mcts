@@ -37,7 +37,7 @@ class PreprocessConfig:
 
 
 @dataclass
-class Config:
+class TrainConfig:
     seed: int = 42
     data_path: Path = REPO_ROOT / "data" / "raw" / "train_mini.csv"
     preprocess: PreprocessConfig = PreprocessConfig()
