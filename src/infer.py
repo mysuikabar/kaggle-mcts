@@ -6,16 +6,15 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
-from config.infer import InferConfig
-from consts import REPO_ROOT
+from config.infer import config
 from ml.model.base import BaseModel
 from ml.model.factory import ModelFactory
 from process.process import Preprocessor
 
-sys.path.append(str(REPO_ROOT / "data" / "raw"))
-import kaggle_evaluation.mcts_inference_server  # type: ignore
+if os.getenv("LOCAL_ENVIRONMENT"):
+    sys.path.append(str(config.evaluation_api_path))
 
-config = InferConfig()
+import kaggle_evaluation.mcts_inference_server  # type: ignore
 
 
 def load_models(model_dir: Path) -> list[BaseModel]:
