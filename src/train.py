@@ -3,7 +3,9 @@ from pathlib import Path
 
 import hydra
 import polars as pl
+import wandb
 from hydra.core.config_store import ConfigStore
+from omegaconf import OmegaConf
 from sklearn.metrics import mean_squared_error
 
 from config.train import Config
@@ -47,11 +49,21 @@ def main(config: Config) -> None:
     models, oof = run_group_cv(X, y, model_factory, groups)
 
     rmse = mean_squared_error(y, oof, squared=False)
-    logger.info(f"mse: {rmse}")
+    logger.info(f"rmse: {rmse}")
 
+    # save models
     config.model.output_dir.mkdir(exist_ok=True)
     for fold, model in enumerate(models, start=1):
         model.save(config.model.output_dir / f"model_{fold}.pickle")
+
+    # log to wandb
+    if config.wandb.enable:
+        wandb.init(
+            project=config.wandb.project,
+            config=OmegaConf.to_container(config),  # type: ignore
+        )
+        wandb.log({"rmse": rmse})
+        wandb.finish()
 
 
 if __name__ == "__main__":

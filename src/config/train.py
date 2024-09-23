@@ -31,9 +31,16 @@ class PreprocessConfig:
 
 
 @dataclass
+class WandbConfig:
+    enable: bool = True
+    project: str = "kaggle-mcts"
+
+
+@dataclass
 class Config:
     seed: int = 42
     data_path: Path = REPO_ROOT / "data" / "raw" / "train_mini.csv"
     preprocess: PreprocessConfig = PreprocessConfig()
     model: ModelConfig = ModelConfig()
+    wandb: WandbConfig = WandbConfig()
     hydra: Any = field(default_factory=lambda: hydra_config)
