@@ -23,10 +23,10 @@ cs.store(name="config", node=Config)
 
 
 def create_preprocessor(
-    use_features: list[str], feature_store_dir: Path
+    use_features: list[str], feature_store_dir: Path | None
 ) -> Preprocessor:
     feature_expressions = feature_expressions_master.filter(use_features)
-    feature_store = FeatureStore(feature_store_dir)
+    feature_store = FeatureStore(feature_store_dir) if feature_store_dir else None
     feature_processor = FeatureProcessor(feature_expressions, feature_store)
 
     return Preprocessor(feature_processor)

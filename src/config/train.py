@@ -27,7 +27,7 @@ class ModelConfig:
 @dataclass
 class PreprocessConfig:
     use_features: list[str] = field(default_factory=lambda: ["agent_property"])
-    feature_store_dir: Path = REPO_ROOT / "data" / "feature_store"
+    feature_store_dir: Path | None = REPO_ROOT / "data" / "feature_store"
 
 
 @dataclass
