@@ -17,11 +17,11 @@ class Config:
 
 
 _config_local_env = Config(
-    processor_path=REPO_ROOT / "outputs" / DATASET / "processor.pickle",
-    model_dir=REPO_ROOT / "outputs" / DATASET / "models",
-    test_path=REPO_ROOT / "data" / "raw" / "test.csv",
-    submission_path=REPO_ROOT / "data" / "raw" / "sample_submission.csv",
-    evaluation_api_path=REPO_ROOT / "data" / "raw",
+    processor_path=REPO_ROOT / f"outputs/{DATASET}/processor.pickle",
+    model_dir=REPO_ROOT / f"outputs/{DATASET}/models",
+    test_path=REPO_ROOT / "data/raw/test.csv",
+    submission_path=REPO_ROOT / "data/raw/sample_submission.csv",
+    evaluation_api_path=REPO_ROOT / "data/raw",
 )
 
 _config_kaggle_env = Config(

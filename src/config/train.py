@@ -18,7 +18,7 @@ class ModelConfig:
 @dataclass
 class PreprocessConfig:
     use_features: list[str] = field(default_factory=lambda: ["agent_property"])
-    feature_store_dir: Path | None = REPO_ROOT / "data" / "feature_store"
+    feature_store_dir: Path | None = REPO_ROOT / "data/feature_store"
 
 
 @dataclass
@@ -29,9 +29,9 @@ class WandbConfig:
 
 
 hydra_config = {
-    "run": {"dir": f"{REPO_ROOT}/outputs/" + WandbConfig.name},
+    "run": {"dir": f"{REPO_ROOT}/outputs/{WandbConfig.name}"},
     "sweep": {
-        "dir": f"{REPO_ROOT}/outputs/" + WandbConfig.name,
+        "dir": f"{REPO_ROOT}/outputs/{WandbConfig.name}",
         "subdir": "${hydra.job.override_dirname}",
     },
     "job": {"chdir": True},
@@ -41,7 +41,7 @@ hydra_config = {
 @dataclass
 class Config:
     seed: int = 42
-    data_path: Path = REPO_ROOT / "data" / "raw" / "train.csv"
+    data_path: Path = REPO_ROOT / "data/raw/train.csv"
     preprocess: PreprocessConfig = PreprocessConfig()
     model: ModelConfig = ModelConfig()
     wandb: WandbConfig = WandbConfig()
