@@ -92,6 +92,10 @@ class FeatureProcessor:
         for feature_name, expressions in self._feature_expressions.items():
             try:
                 feature = self._feature_store.load(feature_name)
+                if len(feature) != len(df_result):
+                    raise ValueError(
+                        f"Loaded feature '{feature_name}' has {len(feature)} rows, but df_result has {len(df_result)} rows. Row counts must match."
+                    )
                 df_result = df_result.hstack(feature)
             except FileNotFoundError:
                 new_feature = df_result.select(expressions)
