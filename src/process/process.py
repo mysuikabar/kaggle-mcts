@@ -1,6 +1,7 @@
 import pickle
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import polars as pl
 from typing_extensions import Self
@@ -65,3 +66,7 @@ class Preprocessor:
             )
 
         return processor
+
+
+def postprocess(pred: np.ndarray) -> np.ndarray:
+    return np.clip(pred, -1, 1)

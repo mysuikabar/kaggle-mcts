@@ -5,7 +5,7 @@ import polars as pl
 
 from config.infer import config
 from ml.cv import load_models, predict_models
-from process.process import Preprocessor
+from process.process import Preprocessor, postprocess
 
 if os.getenv("LOCAL_ENVIRONMENT"):
     sys.path.append(str(config.evaluation_api_path))
@@ -20,6 +20,7 @@ def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
 
     models = load_models(config.model_dir)
     pred = predict_models(models, X)
+    pred = postprocess(pred)
 
     return submission.with_columns(pl.Series("utility_agent1", pred))
 

@@ -13,7 +13,7 @@ from metric import calculate_metrics
 from ml.cv import run_group_cv
 from ml.model.factory import ModelFactory
 from process.feature import FeatureProcessor, FeatureStore
-from process.process import Preprocessor
+from process.process import Preprocessor, postprocess
 from utils.seed import seed_everything
 
 logger = getLogger(__name__)
@@ -47,6 +47,7 @@ def main(config: Config) -> None:
     # train & evaluate
     model_factory = ModelFactory(config.model.type, config.model.config)
     models, oof, fold_assignments = run_group_cv(model_factory, X, y, groups)
+    oof = postprocess(oof)
 
     metrics = calculate_metrics(y, oof, fold_assignments)
     for metric, score in metrics.items():
