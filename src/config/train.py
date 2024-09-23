@@ -39,7 +39,7 @@ class WandbConfig:
 @dataclass
 class Config:
     seed: int = 42
-    data_path: Path = REPO_ROOT / "data" / "raw" / "train_mini.csv"
+    data_path: Path = REPO_ROOT / "data" / "raw" / "train.csv"
     preprocess: PreprocessConfig = PreprocessConfig()
     model: ModelConfig = ModelConfig()
     wandb: WandbConfig = WandbConfig()

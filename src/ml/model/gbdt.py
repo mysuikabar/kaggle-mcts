@@ -19,6 +19,7 @@ class LightGBMConfig(BaseConfig):
     bagging_freq: int
     num_boost_round: int
     early_stopping_rounds: int
+    device: str | None = None
 
 
 class LightGBMModel(BaseModel):
