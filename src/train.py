@@ -37,7 +37,7 @@ def main(config: Config) -> None:
     seed_everything(config.seed)
 
     # preprocess
-    df = pl.read_csv(config.data_path).head(1000)
+    df = pl.read_csv(config.data_path)
     y = df.select("utility_agent1").to_numpy().ravel()
 
     processor = create_preprocessor(**config.preprocess)  # type: ignore
