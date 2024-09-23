@@ -9,16 +9,16 @@ from .base import BaseConfig, BaseModel
 
 @dataclass
 class LightGBMConfig(BaseConfig):
-    objective: str = "regression"
-    metric: str = "rmse"
-    boosting_type: str = "gbdt"
-    num_leaves: int = 30
-    learning_rate: float = 0.05
-    feature_fraction: float = 0.9
-    bagging_fraction: float = 0.8
-    bagging_freq: int = 5
-    num_boost_round: int = 1000
-    early_stopping_rounds: int = 10
+    objective: str
+    metric: str
+    boosting_type: str
+    num_leaves: int
+    learning_rate: float
+    feature_fraction: float
+    bagging_fraction: float
+    bagging_freq: int
+    num_boost_round: int
+    early_stopping_rounds: int
 
 
 class LightGBMModel(BaseModel):

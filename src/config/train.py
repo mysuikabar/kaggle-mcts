@@ -4,7 +4,8 @@ from typing import Any
 
 from consts import REPO_ROOT
 from ml.model.base import BaseConfig
-from ml.model.gbdt import LightGBMConfig
+
+from .model.gbdt import lightgbm_config
 
 hydra_config = {
     "run": {"dir": f"{REPO_ROOT}/outputs/" + "${now:%Y-%m-%d_%H-%M-%S}"},
@@ -16,18 +17,11 @@ hydra_config = {
 }
 
 
-model_config = LightGBMConfig(
-    objective="regression",
-    metric="rmse",
-    boosting_type="gbdt",
-    num_leaves=30,
-    learning_rate=0.05,
-    feature_fraction=0.9,
-    bagging_fraction=0.8,
-    bagging_freq=5,
-    num_boost_round=1000,
-    early_stopping_rounds=10,
-)
+@dataclass
+class ModelConfig:
+    type: str = "lightgbm"
+    config: BaseConfig = lightgbm_config
+    output_dir: Path = Path("models")
 
 
 @dataclass
@@ -41,7 +35,5 @@ class Config:
     seed: int = 42
     data_path: Path = REPO_ROOT / "data" / "raw" / "train_mini.csv"
     preprocess: PreprocessConfig = PreprocessConfig()
-    model_type: str = "lightgbm"
-    model_config: BaseConfig = model_config
-    model_output_dir: Path = Path("models")
+    model: ModelConfig = ModelConfig()
     hydra: Any = field(default_factory=lambda: hydra_config)
