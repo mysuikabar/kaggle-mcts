@@ -51,7 +51,9 @@ def main(
 ) -> None:
     create_metadata(dataset_dir, user_name, title, description)
     upload_dataset(dataset_dir, new)
-    click.echo("Dataset upload completed.")
+    click.echo(
+        f"Dataset upload completed: https://www.kaggle.com/datasets/{user_name}/{title}"
+    )
 
 
 if __name__ == "__main__":
