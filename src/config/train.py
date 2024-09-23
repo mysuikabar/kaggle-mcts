@@ -7,15 +7,6 @@ from ml.model.base import BaseConfig
 
 from .model.gbdt import lightgbm_config
 
-hydra_config = {
-    "run": {"dir": f"{REPO_ROOT}/outputs/" + "${now:%Y-%m-%d_%H-%M-%S}"},
-    "sweep": {
-        "dir": f"{REPO_ROOT}/outputs/" + "${now:%Y-%m-%d_%H-%M-%S}",
-        "subdir": "${hydra.job.override_dirname}",
-    },
-    "job": {"chdir": True},
-}
-
 
 @dataclass
 class ModelConfig:
@@ -32,8 +23,19 @@ class PreprocessConfig:
 
 @dataclass
 class WandbConfig:
-    enable: bool = True
     project: str = "kaggle-mcts"
+    name: str = "run_name"
+    enable: bool = True
+
+
+hydra_config = {
+    "run": {"dir": f"{REPO_ROOT}/outputs/" + WandbConfig.name},
+    "sweep": {
+        "dir": f"{REPO_ROOT}/outputs/" + WandbConfig.name,
+        "subdir": "${hydra.job.override_dirname}",
+    },
+    "job": {"chdir": True},
+}
 
 
 @dataclass

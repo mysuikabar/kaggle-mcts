@@ -61,6 +61,7 @@ def main(config: Config) -> None:
     if config.wandb.enable:
         wandb.init(
             project=config.wandb.project,
+            name=config.wandb.name,
             config=OmegaConf.to_container(config),  # type: ignore
         )
         wandb.log(metrics)
