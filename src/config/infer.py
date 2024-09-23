@@ -4,6 +4,8 @@ from pathlib import Path
 
 from consts import REPO_ROOT
 
+DATASET = "dataset_name"
+
 
 @dataclass
 class Config:
@@ -15,16 +17,16 @@ class Config:
 
 
 _config_local_env = Config(
-    processor_path=REPO_ROOT / "outputs" / "trial" / "processor.pickle",
-    model_dir=REPO_ROOT / "outputs" / "trial" / "models",
+    processor_path=REPO_ROOT / "outputs" / DATASET / "processor.pickle",
+    model_dir=REPO_ROOT / "outputs" / DATASET / "models",
     test_path=REPO_ROOT / "data" / "raw" / "test.csv",
     submission_path=REPO_ROOT / "data" / "raw" / "sample_submission.csv",
     evaluation_api_path=REPO_ROOT / "data" / "raw",
 )
 
 _config_kaggle_env = Config(
-    processor_path=Path("/kaggle/input/mcts-models/processor.pickle"),
-    model_dir=Path("/kaggle/input/mcts-models/models"),
+    processor_path=Path(f"/kaggle/input/{DATASET}/processor.pickle"),
+    model_dir=Path(f"/kaggle/input/{DATASET}/models"),
     test_path=Path("/kaggle/input/um-game-playing-strength-of-mcts-variants/test.csv"),
     submission_path=Path(
         "/kaggle/input/um-game-playing-strength-of-mcts-variants/sample_submission.csv"
