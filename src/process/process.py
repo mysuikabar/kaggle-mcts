@@ -6,8 +6,9 @@ import pandas as pd
 import polars as pl
 from typing_extensions import Self
 
+from .consts import USELESS_COLUMNS
 from .feature import FeatureProcessor
-from .utils import CategoricalConverter, constant_columns
+from .utils import CategoricalConverter
 
 
 class Preprocessor:
@@ -32,7 +33,7 @@ class Preprocessor:
             "num_draws_agent1",
             "num_losses_agent1",
             "utility_agent1",
-        ] + constant_columns(df_result)
+        ] + USELESS_COLUMNS
         df_result = df_result.drop(self._drop_columns, strict=False)
 
         # convert dtype to categorical
