@@ -9,10 +9,16 @@ from .model.gbdt import lightgbm_config
 
 
 @dataclass
+class PathConfig:
+    data: Path = REPO_ROOT / "data/raw/train.csv"
+    processor_output: Path = Path("processors")
+    model_output: Path = Path("models")
+
+
+@dataclass
 class ModelConfig:
     type: str = "lightgbm"
     config: BaseConfig = lightgbm_config
-    output_dir: Path = Path("models")
 
 
 @dataclass
@@ -41,7 +47,10 @@ hydra_config = {
 @dataclass
 class Config:
     seed: int = 42
-    data_path: Path = REPO_ROOT / "data/raw/train.csv"
+    n_splits: int = 5
+    target: str = "utility_agent1"
+    groups: str = "GameRulesetName"
+    path: PathConfig = PathConfig()
     preprocess: PreprocessConfig = PreprocessConfig()
     model: ModelConfig = ModelConfig()
     wandb: WandbConfig = WandbConfig()

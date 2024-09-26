@@ -2,18 +2,20 @@ from logging import getLogger
 from pathlib import Path
 
 import hydra
-import polars as pl
+import numpy as np
+import pandas as pd
 import wandb
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
+from sklearn.model_selection import GroupKFold
 
 from config.train import Config
 from features import feature_expressions_master
 from metric import calculate_metrics
-from ml.cv import run_group_cv
+from ml.model.base import BaseModel
 from ml.model.factory import ModelFactory
 from process.feature import FeatureProcessor, FeatureStore
-from process.process import Preprocessor, postprocess
+from process.process import Preprocessor
 from utils.seed import seed_everything
 
 logger = getLogger(__name__)
@@ -36,27 +38,48 @@ def create_preprocessor(
 def main(config: Config) -> None:
     seed_everything(config.seed)
 
-    # preprocess
-    df = pl.read_csv(config.data_path)
-    y = df.select("utility_agent1").to_numpy().ravel()
-
-    processor = create_preprocessor(**config.preprocess)  # type: ignore
-    X, groups = processor.fit_transform(df), processor.group_label
-    processor.save("processor.pickle")
-
-    # train & evaluate
+    df = pd.read_csv(config.path.data)
+    X = df.drop(columns=[config.target])
+    y = df[config.target].values
+    groups = df[config.groups].values
     model_factory = ModelFactory(config.model.type, config.model.config)
-    models, oof, fold_assignments = run_group_cv(model_factory, X, y, groups)
-    oof = postprocess(oof)
 
+    # cross validation
+    processors: list[Preprocessor] = []
+    models: list[BaseModel] = []
+    oof = np.zeros(len(y))
+    fold_assignments = np.zeros(len(y), dtype=int)
+
+    kf = GroupKFold(config.n_splits)
+    for fold, (idx_tr, idx_va) in enumerate(kf.split(X, y, groups), start=1):
+        logger.info(f"Training fold {fold}")
+
+        X_tr, y_tr = X.iloc[idx_tr], y[idx_tr]
+        X_va, y_va = X.iloc[idx_va], y[idx_va]
+
+        processor = create_preprocessor(**config.preprocess)  # type: ignore
+        X_tr = processor.fit_transform(X_tr)
+        X_va = processor.transform(X_va)
+        processors.append(processor)
+
+        model = model_factory.build()
+        model.fit(X_tr, y_tr, X_va, y_va)
+        models.append(model)
+
+        oof[idx_va] = model.predict(X_va)
+        fold_assignments[idx_va] = fold
+
+    # evaluate
     metrics = calculate_metrics(y, oof, fold_assignments)
     for metric, score in metrics.items():
         logger.info(f"{metric}: {score}")
 
-    # save models
-    config.model.output_dir.mkdir(exist_ok=True)
-    for fold, model in enumerate(models, start=1):
-        model.save(config.model.output_dir / f"model_{fold}.pickle")
+    # save processors & models
+    config.path.processor_output.mkdir(exist_ok=True)
+    config.path.model_output.mkdir(exist_ok=True)
+    for fold, (processor, model) in enumerate(zip(processors, models), start=1):
+        processor.save(config.path.processor_output / f"processor_{fold}.pickle")
+        model.save(config.path.model_output / f"model_{fold}.pickle")
 
     # log to wandb
     if config.wandb.enable:

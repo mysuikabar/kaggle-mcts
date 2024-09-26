@@ -16,9 +16,8 @@ class Preprocessor:
         self._feature_processor = feature_processor
         self._cat_converter = CategoricalConverter()
 
-    def fit_transform(self, df: pl.DataFrame) -> pd.DataFrame:
-        # get group label
-        self.group_label = df.select("GameRulesetName").to_numpy()
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = pl.DataFrame(df)
 
         # feature engineering
         df_result = self._feature_processor.run(df)
@@ -41,7 +40,9 @@ class Preprocessor:
 
         return df_result
 
-    def transform(self, df: pl.DataFrame) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = pl.DataFrame(df)
+
         df_result = self._feature_processor.run(df)
         df_result = df_result.drop(self._drop_columns, strict=False)
         df_result = self._cat_converter.transform(df_result.to_pandas())
