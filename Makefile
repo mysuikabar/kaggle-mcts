@@ -8,7 +8,7 @@ create_dataset:
 		echo "Usage: make create_dataset dataset_dir=<dataset_dir> title=<title>"; \
 		exit 1; \
 	fi
-	python src/tools/push_dataset.py \
+	python tools/push_dataset.py \
 		--dataset_dir $(dataset_dir) \
 		--user_name $(USER_NAME) \
 		--title $(title) \
@@ -20,7 +20,7 @@ push_dataset:
 		echo "Usage: make push_dataset dataset_dir=<dataset_dir> title=<title>"; \
 		exit 1; \
 	fi
-	python src/tools/push_dataset.py \
+	python tools/push_dataset.py \
 		--dataset_dir $(dataset_dir) \
 		--user_name $(USER_NAME) \
 		--title $(title)
@@ -31,7 +31,7 @@ push_notebook:
 		echo "Usage: make push_notebook file_path=<file_path> title=<title> [dataset=<dataset>]"; \
 		exit 1; \
 	fi
-	python src/tools/push_notebook.py \
+	python tools/push_notebook.py \
 		--file_path $(file_path) \
 		--user_name $(USER_NAME) \
 		--title $(title) \
