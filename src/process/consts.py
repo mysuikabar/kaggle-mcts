@@ -1,3 +1,8 @@
+# text columns pattern
+AGENT_PATTERN = r"MCTS-(.*)-(.*)-(.*)-(.*)"
+LUD_RULES_PATTERN = r"^\(game\s+\"(.*?)\"\s+\(players\s+(.*?)\)\s+\(equipment\s+(.*?)\)\s+\(rules\s+(.*?)\)\s+\)$"
+
+# useless columns
 _null_columns = [
     "Behaviour",
     "StateRepetition",
