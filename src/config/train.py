@@ -9,13 +9,6 @@ from .model.gbdt import lightgbm_config
 
 
 @dataclass
-class PathConfig:
-    data: Path = REPO_ROOT / "data/raw/train.csv"
-    processor_output: Path = Path("processors")
-    model_output: Path = Path("models")
-
-
-@dataclass
 class ModelConfig:
     type: str = "lightgbm"
     config: BaseConfig = lightgbm_config
@@ -50,7 +43,7 @@ class Config:
     n_splits: int = 5
     target: str = "utility_agent1"
     groups: str = "GameRulesetName"
-    path: PathConfig = PathConfig()
+    data_path: Path = REPO_ROOT / "data/raw/train.csv"
     preprocess: PreprocessConfig = PreprocessConfig()
     model: ModelConfig = ModelConfig()
     wandb: WandbConfig = WandbConfig()
