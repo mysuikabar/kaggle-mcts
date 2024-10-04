@@ -16,7 +16,9 @@ class ModelConfig:
 
 @dataclass
 class PreprocessConfig:
-    use_features: list[str] = field(default_factory=lambda: ["agent_property"])
+    use_features: list[str] = field(
+        default_factory=lambda: ["agent_property", "lud_rules"]
+    )
     feature_store_dir: Path | None = None
 
 
