@@ -23,22 +23,22 @@ class Preprocessor:
         }
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = pl.DataFrame(df)
-
         # feature engineering
-        df_result = self._feature_processor.run(df)
+        df = pl.DataFrame(df)
+        df_result = self._feature_processor.run(df).to_pandas()
 
         # process text columns
         for text_col, tfidf in self._tfidf_container.items():
-            df_tfidf = tfidf.fit_transform(df_result[text_col].to_pandas())
+            # text length
+            df_result[f"{text_col}_len"] = df_result[text_col].str.len()
+
+            # tfidf
+            df_tfidf = tfidf.fit_transform(df_result[text_col])
             df_tfidf.columns = [f"tfidf_{text_col}_{word}" for word in df_tfidf.columns]
-            df_result = (
-                df_result.with_columns(
-                    pl.col(text_col).str.len_chars().alias(f"{text_col}_len_chars")
-                )
-                .hstack(pl.DataFrame(df_tfidf))
-                .drop(text_col, strict=False)
-            )
+            df_result = pd.concat([df_result, df_tfidf], axis=1)
+
+            # drop original text column
+            df_result = df_result.drop(columns=text_col)
 
         # drop columns
         self._drop_columns = [
@@ -51,31 +51,36 @@ class Preprocessor:
             "num_losses_agent1",
             "utility_agent1",
         ] + USELESS_COLUMNS
-        df_result = df_result.drop(self._drop_columns, strict=False)
+        df_result = df_result.drop(columns=self._drop_columns, errors="ignore")
 
-        # convert dtype to categorical
-        df_result = self._cat_converter.fit_transform(df_result.to_pandas())
+        # convert object dtype to categorical
+        df_result = self._cat_converter.fit_transform(df_result)
 
         return df_result
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        # feature engineering
         df = pl.DataFrame(df)
+        df_result = self._feature_processor.run(df).to_pandas()
 
-        df_result = self._feature_processor.run(df)
-
+        # process text columns
         for text_col, tfidf in self._tfidf_container.items():
-            df_tfidf = tfidf.transform(df_result[text_col].to_pandas())
-            df_tfidf.columns = [f"tfidf_{text_col}_{word}" for word in df_tfidf.columns]
-            df_result = (
-                df_result.with_columns(
-                    pl.col(text_col).str.len_chars().alias(f"{text_col}_len_chars")
-                )
-                .hstack(pl.DataFrame(df_tfidf))
-                .drop(text_col, strict=False)
-            )
+            # text length
+            df_result[f"{text_col}_len"] = df_result[text_col].str.len()
 
-        df_result = df_result.drop(self._drop_columns, strict=False)
-        df_result = self._cat_converter.transform(df_result.to_pandas())
+            # tfidf
+            df_tfidf = tfidf.transform(df_result[text_col])
+            df_tfidf.columns = [f"tfidf_{text_col}_{word}" for word in df_tfidf.columns]
+            df_result = pd.concat([df_result, df_tfidf], axis=1)
+
+            # drop original text column
+            df_result = df_result.drop(columns=text_col)
+
+        # drop columns
+        df_result = df_result.drop(columns=self._drop_columns, errors="ignore")
+
+        # convert object dtype to categorical
+        df_result = self._cat_converter.transform(df_result)
 
         return df_result
 
