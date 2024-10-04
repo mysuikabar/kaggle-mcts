@@ -4,6 +4,8 @@ from pathlib import Path
 
 import polars as pl
 
+from .base import BaseProcessor
+
 logger = getLogger(__name__)
 
 
@@ -63,7 +65,7 @@ class FeatureStore:
             raise FileNotFoundError(f"Feature {feature_name} not found.")
 
 
-class FeatureProcessor:
+class FeatureProcessor(BaseProcessor):
     """
     A class for processing features.
     """
@@ -78,7 +80,7 @@ class FeatureProcessor:
             FeatureStore(feature_store_dir) if feature_store_dir else None
         )
 
-    def run(self, df: pl.DataFrame) -> pl.DataFrame:
+    def transform(self, df: pl.DataFrame) -> pl.DataFrame:
         """
         Process features on the input DataFrame.
         """

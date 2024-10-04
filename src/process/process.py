@@ -1,16 +1,13 @@
-import pickle
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
-from typing_extensions import Self
 
+from .base import BaseFittableProcessor
 from .consts import USELESS_COLUMNS
 from .text import TfidfProcessor
 from .utils import CategoricalConverter
 
 
-class Preprocessor:
+class PreProcessor(BaseFittableProcessor):
     def __init__(self) -> None:
         self._cat_converter = CategoricalConverter()
         self._tfidf_container: dict[str, TfidfProcessor] = {
@@ -76,23 +73,6 @@ class Preprocessor:
         df_result = self._cat_converter.transform(df_result)
 
         return df_result
-
-    def save(self, filepath: str | Path) -> None:
-        with open(filepath, "wb") as f:
-            pickle.dump(self, f)
-
-    @classmethod
-    def load(cls, filepath: str | Path) -> Self:
-        with open(filepath, "rb") as file:
-            processor = pickle.load(file)
-
-        if not isinstance(processor, cls):
-            raise TypeError(
-                f"Loaded object type does not match expected type. "
-                f"Expected: {cls.__name__}, Actual: {type(processor).__name__}"
-            )
-
-        return processor
 
 
 def postprocess(pred: np.ndarray) -> np.ndarray:

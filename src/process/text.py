@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from typing_extensions import Self
 
+from .base import BaseFittableProcessor
 from .consts import STOP_WORDS
 
 
@@ -27,7 +28,7 @@ def _preprocess_text(text: str) -> str:
     return text
 
 
-class TfidfProcessor:
+class TfidfProcessor(BaseFittableProcessor):
     """
     tf-idf processor for text columns
     """

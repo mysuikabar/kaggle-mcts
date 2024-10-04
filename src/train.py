@@ -15,7 +15,7 @@ from features import feature_expressions_master
 from metric import calculate_metrics
 from ml.model.factory import ModelFactory
 from process.feature import FeatureProcessor
-from process.process import Preprocessor
+from process.process import PreProcessor
 from utils.seed import seed_everything
 
 logger = getLogger(__name__)
@@ -40,7 +40,8 @@ def main(config: Config) -> None:
     logger.info("Feature engineering")
     features = feature_expressions_master.filter(config.feature.use_features)
     feature_processor = FeatureProcessor(features, config.feature.feature_store_dir)
-    X = feature_processor.run(pl.DataFrame(X)).to_pandas()
+    X = feature_processor.transform(pl.DataFrame(X)).to_pandas()
+    feature_processor.save("feature_processor.pickle")
     logger.info(f"Feature engineered data shape: {X.shape}")
 
     # cross validation
@@ -56,7 +57,7 @@ def main(config: Config) -> None:
         X_va, y_va = X.iloc[idx_va], y[idx_va]
 
         # preprocess
-        processor = Preprocessor()
+        processor = PreProcessor()
         X_tr = processor.fit_transform(X_tr)
         X_va = processor.transform(X_va)
 
