@@ -2,6 +2,7 @@ from collections import UserDict
 from logging import getLogger
 from pathlib import Path
 
+import pandas as pd
 import polars as pl
 
 from .base import BaseProcessor
@@ -80,17 +81,17 @@ class FeatureProcessor(BaseProcessor):
             FeatureStore(feature_store_dir) if feature_store_dir else None
         )
 
-    def transform(self, df: pl.DataFrame) -> pl.DataFrame:
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Process features on the input DataFrame.
         """
-        df_result = df.clone()
+        df_result = pl.DataFrame(df)
 
         if self._feature_store is None:
             expressions = [
                 expr for exprs in self._feature_expressions.values() for expr in exprs
             ]
-            return df_result.with_columns(expressions)
+            return df_result.with_columns(expressions).to_pandas()
 
         # when feature store is given
         for feature_name, expressions in self._feature_expressions.items():
@@ -106,7 +107,7 @@ class FeatureProcessor(BaseProcessor):
                 self._feature_store.save(new_feature, feature_name)
                 df_result = df_result.hstack(new_feature)
 
-        return df_result
+        return df_result.to_pandas()
 
     def disable_feature_store(self) -> None:
         """

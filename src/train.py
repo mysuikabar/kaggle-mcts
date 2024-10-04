@@ -4,7 +4,6 @@ from pathlib import Path
 import hydra
 import numpy as np
 import pandas as pd
-import polars as pl
 import wandb
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
@@ -40,7 +39,7 @@ def main(config: Config) -> None:
     logger.info("Feature engineering")
     features = feature_expressions_master.filter(config.feature.use_features)
     feature_processor = FeatureProcessor(features, config.feature.feature_store_dir)
-    X = feature_processor.transform(pl.DataFrame(X)).to_pandas()
+    X = feature_processor.transform(X)
     feature_processor.save("feature_processor.pickle")
     logger.info(f"Feature engineered data shape: {X.shape}")
 
