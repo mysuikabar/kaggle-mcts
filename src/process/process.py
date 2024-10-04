@@ -84,7 +84,7 @@ class Preprocessor:
 
         return df_result
 
-    def disable_feature_store(self) -> None:
+    def set_inference_mode(self) -> None:
         self._feature_processor.disable_feature_store()
 
     def save(self, filepath: str | Path) -> None:

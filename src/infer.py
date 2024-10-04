@@ -39,10 +39,11 @@ else:
 
 def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
     preds = []
+
     for dir_path in glob.glob(str(config.dataset_dir / "fold_*")):
         # process test data
         processor = Preprocessor.load(f"{dir_path}/processor.pickle")
-        processor.disable_feature_store()
+        processor.set_inference_mode()
         X = processor.transform(test)
 
         # predict

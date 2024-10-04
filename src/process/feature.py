@@ -59,7 +59,7 @@ class FeatureStore:
             logger.info(f"Loading feature '{feature_name}' from {file_path}")
             return pl.read_parquet(file_path)
         else:
-            logger.error(f"Feature '{feature_name}' not found at {file_path}")
+            logger.info(f"Feature '{feature_name}' not found at {file_path}")
             raise FileNotFoundError(f"Feature {feature_name} not found.")
 
 
