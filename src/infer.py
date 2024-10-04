@@ -9,7 +9,8 @@ import polars as pl
 from config.infer import Config
 from consts import REPO_ROOT
 from ml.model.factory import ModelFactory
-from process.process import Preprocessor, postprocess
+from process.feature import FeatureProcessor
+from process.process import PreProcessor, postprocess
 
 DATASET = "run_name"  # change here
 
@@ -38,19 +39,25 @@ else:
 
 
 def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
+    # feature engineering
+    feature_processor = FeatureProcessor.load(
+        f"{config.dataset_dir}/feature_processor.pickle"
+    )
+    feature_processor.disable_feature_store()
+    test = feature_processor.transform(test.to_pandas())
+
     preds = []
 
     for dir_path in glob.glob(str(config.dataset_dir / "fold_*")):
         # process test data
-        processor = Preprocessor.load(f"{dir_path}/processor.pickle")
-        processor.set_inference_mode()
+        processor = PreProcessor.load(f"{dir_path}/processor.pickle")
         X = processor.transform(test)
 
         # predict
         model = ModelFactory.load(f"{dir_path}/model.pickle")
         pred = model.predict(X)
-        pred = postprocess(pred)
 
+        pred = postprocess(pred)
         preds.append(pred)
 
     prediction = np.stack(preds).mean(axis=0)
