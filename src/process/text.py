@@ -1,10 +1,17 @@
 import re
 import string
 
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from typing_extensions import Self
+
 from .consts import STOP_WORDS
 
 
-def preprocess_text(text: str) -> str:
+def _preprocess_text(text: str) -> str:
+    """
+    preprocess text
+    """
     text = text.lower()
 
     # replace punctuation with space
@@ -18,3 +25,26 @@ def preprocess_text(text: str) -> str:
     text = " ".join([word for word in text.split() if word not in STOP_WORDS])
 
     return text
+
+
+class TfidfProcessor:
+    """
+    tf-idf processor for text columns
+    """
+
+    def __init__(self) -> None:
+        self._processor = TfidfVectorizer()
+
+    def fit(self, sr: pd.Series) -> Self:
+        sr = sr.apply(_preprocess_text)
+        self._processor.fit(sr)
+        return self
+
+    def transform(self, sr: pd.Series) -> pd.DataFrame:
+        sr = sr.apply(_preprocess_text)
+        features = self._processor.transform(sr).toarray()
+        columns = self._processor.get_feature_names_out().tolist()
+        return pd.DataFrame(features, columns=columns)
+
+    def fit_transform(self, sr: pd.Series) -> pd.DataFrame:
+        return self.fit(sr).transform(sr)
