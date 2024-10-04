@@ -12,7 +12,7 @@ def _preprocess_text(text: str) -> str:
     """
     preprocess text
     """
-    text = text.lower()
+    text = str(text).lower()
 
     # replace punctuation with space
     translator = str.maketrans(string.punctuation, " " * len(string.punctuation))
@@ -44,7 +44,7 @@ class TfidfProcessor:
         sr = sr.apply(_preprocess_text)
         features = self._processor.transform(sr).toarray()
         columns = self._processor.get_feature_names_out().tolist()
-        return pd.DataFrame(features, columns=columns)
+        return pd.DataFrame(features, index=sr.index, columns=columns)
 
     def fit_transform(self, sr: pd.Series) -> pd.DataFrame:
         return self.fit(sr).transform(sr)
