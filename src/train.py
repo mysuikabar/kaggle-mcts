@@ -28,15 +28,20 @@ cs.store(name="config", node=Config)
 def main(config: Config) -> None:
     seed_everything(config.seed)
 
+    # load data
+    logger.info("Loading data")
     df = pd.read_csv(config.data_path)
     X = df.drop(columns=[config.target])
     y = df[config.target].values
     groups = df[config.groups].values
+    logger.info(f"Raw data shape: {df.shape}")
 
     # feature engineering
+    logger.info("Feature engineering")
     features = feature_expressions_master.filter(config.feature.use_features)
     feature_processor = FeatureProcessor(features, config.feature.feature_store_dir)
     X = feature_processor.run(pl.DataFrame(X)).to_pandas()
+    logger.info(f"Feature engineered data shape: {X.shape}")
 
     # cross validation
     model_factory = ModelFactory(config.model.type, config.model.config)
