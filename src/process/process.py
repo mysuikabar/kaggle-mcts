@@ -3,18 +3,15 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import polars as pl
 from typing_extensions import Self
 
 from .consts import USELESS_COLUMNS
-from .feature import FeatureProcessor
 from .text import TfidfProcessor
 from .utils import CategoricalConverter
 
 
 class Preprocessor:
-    def __init__(self, feature_processor: FeatureProcessor) -> None:
-        self._feature_processor = feature_processor
+    def __init__(self) -> None:
         self._cat_converter = CategoricalConverter()
         self._tfidf_container: dict[str, TfidfProcessor] = {
             "EnglishRules": TfidfProcessor(),
@@ -23,9 +20,7 @@ class Preprocessor:
         }
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        # feature engineering
-        df = pl.DataFrame(df)
-        df_result = self._feature_processor.run(df).to_pandas()
+        df_result = df.copy()
 
         # process text columns
         for text_col, tfidf in self._tfidf_container.items():
@@ -59,9 +54,7 @@ class Preprocessor:
         return df_result
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        # feature engineering
-        df = pl.DataFrame(df)
-        df_result = self._feature_processor.run(df).to_pandas()
+        df_result = df.copy()
 
         # process text columns
         for text_col, tfidf in self._tfidf_container.items():
@@ -83,9 +76,6 @@ class Preprocessor:
         df_result = self._cat_converter.transform(df_result)
 
         return df_result
-
-    def set_inference_mode(self) -> None:
-        self._feature_processor.disable_feature_store()
 
     def save(self, filepath: str | Path) -> None:
         with open(filepath, "wb") as f:

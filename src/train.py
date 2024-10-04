@@ -4,6 +4,7 @@ from pathlib import Path
 import hydra
 import numpy as np
 import pandas as pd
+import polars as pl
 import wandb
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
@@ -13,7 +14,7 @@ from config.train import Config
 from features import feature_expressions_master
 from metric import calculate_metrics
 from ml.model.factory import ModelFactory
-from process.feature import FeatureProcessor, FeatureStore
+from process.feature import FeatureProcessor
 from process.process import Preprocessor
 from utils.seed import seed_everything
 
@@ -21,16 +22,6 @@ logger = getLogger(__name__)
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
-
-
-def create_preprocessor(
-    use_features: list[str], feature_store_dir: Path | None
-) -> Preprocessor:
-    feature_expressions = feature_expressions_master.filter(use_features)
-    feature_store = FeatureStore(feature_store_dir) if feature_store_dir else None
-    feature_processor = FeatureProcessor(feature_expressions, feature_store)
-
-    return Preprocessor(feature_processor)
 
 
 @hydra.main(version_base=None, config_name="config")
@@ -41,9 +32,14 @@ def main(config: Config) -> None:
     X = df.drop(columns=[config.target])
     y = df[config.target].values
     groups = df[config.groups].values
-    model_factory = ModelFactory(config.model.type, config.model.config)
+
+    # feature engineering
+    features = feature_expressions_master.filter(config.feature.use_features)
+    feature_processor = FeatureProcessor(features, config.feature.feature_store_dir)
+    X = feature_processor.run(pl.DataFrame(X)).to_pandas()
 
     # cross validation
+    model_factory = ModelFactory(config.model.type, config.model.config)
     oof = np.zeros(len(y))
     fold_assignments = np.zeros(len(y), dtype=int)
 
@@ -55,7 +51,7 @@ def main(config: Config) -> None:
         X_va, y_va = X.iloc[idx_va], y[idx_va]
 
         # preprocess
-        processor = create_preprocessor(**config.preprocess)  # type: ignore
+        processor = Preprocessor()
         X_tr = processor.fit_transform(X_tr)
         X_va = processor.transform(X_va)
 

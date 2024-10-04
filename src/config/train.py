@@ -9,17 +9,17 @@ from .model.gbdt import lightgbm_config
 
 
 @dataclass
-class ModelConfig:
-    type: str = "lightgbm"
-    config: BaseConfig = lightgbm_config
-
-
-@dataclass
-class PreprocessConfig:
+class FeatureConfig:
     use_features: list[str] = field(
         default_factory=lambda: ["agent_property", "lud_rules"]
     )
     feature_store_dir: Path | None = None
+
+
+@dataclass
+class ModelConfig:
+    type: str = "lightgbm"
+    config: BaseConfig = lightgbm_config
 
 
 @dataclass
@@ -46,7 +46,7 @@ class Config:
     target: str = "utility_agent1"
     groups: str = "GameRulesetName"
     data_path: Path = REPO_ROOT / "data/raw/train.csv"
-    preprocess: PreprocessConfig = PreprocessConfig()
+    feature: FeatureConfig = FeatureConfig()
     model: ModelConfig = ModelConfig()
     wandb: WandbConfig = WandbConfig()
     hydra: Any = field(default_factory=lambda: hydra_config)

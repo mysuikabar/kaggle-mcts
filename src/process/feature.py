@@ -71,10 +71,12 @@ class FeatureProcessor:
     def __init__(
         self,
         feature_expressions: FeatureExpressions,
-        feature_store: FeatureStore | None = None,
+        feature_store_dir: Path | None = None,
     ) -> None:
         self._feature_expressions = feature_expressions
-        self._feature_store = feature_store
+        self._feature_store = (
+            FeatureStore(feature_store_dir) if feature_store_dir else None
+        )
 
     def run(self, df: pl.DataFrame) -> pl.DataFrame:
         """
