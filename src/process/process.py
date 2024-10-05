@@ -2,6 +2,7 @@ from logging import getLogger
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 
 from .base import BaseFittableProcessor
 from .consts import USELESS_COLUMNS
@@ -30,23 +31,42 @@ class PreProcessor(BaseFittableProcessor):
             "utility_agent1",
         ] + USELESS_COLUMNS
 
+    @staticmethod
+    def _process_text_column(
+        sr: pd.Series, tfidf: TfidfProcessor, fit: bool
+    ) -> pd.DataFrame:
+        name = sr.name
+        df_result = pd.DataFrame(index=sr.index)
+
+        # text length
+        df_result[f"{name}_len"] = sr.str.len()
+
+        # tfidf
+        if fit:
+            df_tfidf = tfidf.fit_transform(sr)
+        else:
+            df_tfidf = tfidf.transform(sr)
+        df_tfidf.columns = [f"tfidf_{name}_{word}" for word in df_tfidf.columns]
+
+        return df_result
+
+    def _parallel_process_text_columns(
+        self, df: pd.DataFrame, fit: bool
+    ) -> pd.DataFrame:
+        dfs = Parallel(n_jobs=-1)(
+            delayed(self._process_text_column)(df[col], tfidf, fit)
+            for col, tfidf in self._tfidf_container.items()
+        )
+        return pd.concat(dfs, axis=1)
+
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         df_result = df.copy()
 
         # process text columns
-        for text_col, tfidf in self._tfidf_container.items():
-            logger.info(f"Processing text col: {text_col}")
-
-            # text length
-            df_result[f"{text_col}_len"] = df_result[text_col].str.len()
-
-            # tfidf
-            df_tfidf = tfidf.fit_transform(df_result[text_col])
-            df_tfidf.columns = [f"tfidf_{text_col}_{word}" for word in df_tfidf.columns]
-            df_result = pd.concat([df_result, df_tfidf], axis=1)
-
-            # drop original text column
-            df_result = df_result.drop(columns=text_col)
+        logger.info("Processing text columns")
+        df_text = self._parallel_process_text_columns(df_result, fit=True)
+        df_result = pd.concat([df_result, df_text], axis=1)
+        df_result = df_result.drop(columns=self._tfidf_container.keys())
 
         df_result = df_result.drop(columns=self._drop_columns, errors="ignore")
         df_result = self._cat_converter.fit_transform(df_result)
@@ -57,19 +77,9 @@ class PreProcessor(BaseFittableProcessor):
         df_result = df.copy()
 
         # process text columns
-        for text_col, tfidf in self._tfidf_container.items():
-            logger.info(f"Processing text col: {text_col}")
-
-            # text length
-            df_result[f"{text_col}_len"] = df_result[text_col].str.len()
-
-            # tfidf
-            df_tfidf = tfidf.transform(df_result[text_col])
-            df_tfidf.columns = [f"tfidf_{text_col}_{word}" for word in df_tfidf.columns]
-            df_result = pd.concat([df_result, df_tfidf], axis=1)
-
-            # drop original text column
-            df_result = df_result.drop(columns=text_col)
+        df_text = self._parallel_process_text_columns(df_result, fit=False)
+        df_result = pd.concat([df_result, df_text], axis=1)
+        df_result = df_result.drop(columns=self._tfidf_container.keys())
 
         df_result = df_result.drop(columns=self._drop_columns, errors="ignore")
         df_result = self._cat_converter.transform(df_result)
