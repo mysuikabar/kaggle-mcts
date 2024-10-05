@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import lightgbm as lgb
 import numpy as np
+import xgboost as xgb
 from typing_extensions import Self
 
 from .base import BaseConfig, BaseModel
@@ -19,6 +20,7 @@ class LightGBMConfig(BaseConfig):
     bagging_freq: int
     num_boost_round: int
     early_stopping_rounds: int
+    max_bin: int
     device: str | None = None
 
 

@@ -11,5 +11,6 @@ lightgbm_config = LightGBMConfig(
     bagging_freq=5,
     num_boost_round=1000,
     early_stopping_rounds=10,
+    max_bin=255,
     device="gpu",
 )
