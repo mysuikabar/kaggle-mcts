@@ -1,3 +1,5 @@
+from logging import getLogger
+
 import numpy as np
 import pandas as pd
 
@@ -5,6 +7,8 @@ from .base import BaseFittableProcessor
 from .consts import USELESS_COLUMNS
 from .text import TfidfProcessor
 from .utils import CategoricalConverter
+
+logger = getLogger(__name__)
 
 
 class PreProcessor(BaseFittableProcessor):
@@ -15,12 +19,24 @@ class PreProcessor(BaseFittableProcessor):
             "LudRules_equipment": TfidfProcessor(),
             "LudRules_rules": TfidfProcessor(),
         }
+        self._drop_columns = [
+            "Id",
+            "GameRulesetName",
+            "EnglishRules",
+            "LudRules",
+            "num_wins_agent1",
+            "num_draws_agent1",
+            "num_losses_agent1",
+            "utility_agent1",
+        ] + USELESS_COLUMNS
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         df_result = df.copy()
 
         # process text columns
         for text_col, tfidf in self._tfidf_container.items():
+            logger.info(f"Processing text col: {text_col}")
+
             # text length
             df_result[f"{text_col}_len"] = df_result[text_col].str.len()
 
@@ -32,20 +48,7 @@ class PreProcessor(BaseFittableProcessor):
             # drop original text column
             df_result = df_result.drop(columns=text_col)
 
-        # drop columns
-        self._drop_columns = [
-            "Id",
-            "GameRulesetName",
-            "EnglishRules",
-            "LudRules",
-            "num_wins_agent1",
-            "num_draws_agent1",
-            "num_losses_agent1",
-            "utility_agent1",
-        ] + USELESS_COLUMNS
         df_result = df_result.drop(columns=self._drop_columns, errors="ignore")
-
-        # convert object dtype to categorical
         df_result = self._cat_converter.fit_transform(df_result)
 
         return df_result
@@ -55,6 +58,8 @@ class PreProcessor(BaseFittableProcessor):
 
         # process text columns
         for text_col, tfidf in self._tfidf_container.items():
+            logger.info(f"Processing text col: {text_col}")
+
             # text length
             df_result[f"{text_col}_len"] = df_result[text_col].str.len()
 
@@ -66,10 +71,7 @@ class PreProcessor(BaseFittableProcessor):
             # drop original text column
             df_result = df_result.drop(columns=text_col)
 
-        # drop columns
         df_result = df_result.drop(columns=self._drop_columns, errors="ignore")
-
-        # convert object dtype to categorical
         df_result = self._cat_converter.transform(df_result)
 
         return df_result
