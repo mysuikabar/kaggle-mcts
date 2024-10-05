@@ -17,6 +17,11 @@ class FeatureConfig:
 
 
 @dataclass
+class PreProcessorConfig:
+    tfidf_max_features: int = 600
+
+
+@dataclass
 class ModelConfig:
     type: str = "lightgbm"
     config: BaseConfig = lightgbm_config
@@ -47,6 +52,7 @@ class Config:
     groups: str = "GameRulesetName"
     data_path: Path = REPO_ROOT / "data/raw/train.csv"
     feature: FeatureConfig = FeatureConfig()
+    preprocessor: PreProcessorConfig = PreProcessorConfig()
     model: ModelConfig = ModelConfig()
     wandb: WandbConfig = WandbConfig()
     hydra: Any = field(default_factory=lambda: hydra_config)

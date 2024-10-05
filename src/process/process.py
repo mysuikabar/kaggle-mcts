@@ -12,12 +12,12 @@ logger = getLogger(__name__)
 
 
 class PreProcessor(BaseFittableProcessor):
-    def __init__(self) -> None:
+    def __init__(self, tfidf_max_features: int) -> None:
         self._cat_converter = CategoricalConverter()
         self._tfidf_container: dict[str, TfidfProcessor] = {
-            "EnglishRules": TfidfProcessor(),
-            "LudRules_equipment": TfidfProcessor(),
-            "LudRules_rules": TfidfProcessor(),
+            "EnglishRules": TfidfProcessor(tfidf_max_features),
+            "LudRules_equipment": TfidfProcessor(tfidf_max_features),
+            "LudRules_rules": TfidfProcessor(tfidf_max_features),
         }
         self._drop_columns = [
             "Id",

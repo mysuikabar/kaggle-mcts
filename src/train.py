@@ -56,7 +56,7 @@ def main(config: Config) -> None:
         X_va, y_va = X.iloc[idx_va], y[idx_va]
 
         # preprocess
-        processor = PreProcessor()
+        processor = PreProcessor(config.preprocessor.tfidf_max_features)
         X_tr = processor.fit_transform(X_tr)
         X_va = processor.transform(X_va)
 

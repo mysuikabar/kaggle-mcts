@@ -33,8 +33,8 @@ class TfidfProcessor(BaseFittableProcessor):
     tf-idf processor for text columns
     """
 
-    def __init__(self) -> None:
-        self._processor = TfidfVectorizer()
+    def __init__(self, max_features: int) -> None:
+        self._processor = TfidfVectorizer(max_features=max_features)
 
     def fit(self, sr: pd.Series) -> Self:
         sr = sr.apply(_preprocess_text)
