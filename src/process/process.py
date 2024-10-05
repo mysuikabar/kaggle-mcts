@@ -33,38 +33,49 @@ class PreProcessor(BaseFittableProcessor):
 
     @staticmethod
     def _process_text_column(
-        sr: pd.Series, tfidf: TfidfProcessor, fit: bool
-    ) -> pd.DataFrame:
-        name = sr.name
-        df_result = pd.DataFrame(index=sr.index)
+        df: pd.DataFrame, col: str, tfidf: TfidfProcessor, fit: bool
+    ) -> tuple[pd.DataFrame, str, TfidfProcessor]:
+        df_result = pd.DataFrame(index=df.index)
 
         # text length
-        df_result[f"{name}_len"] = sr.str.len()
+        df_result[f"{col}_len"] = df[col].str.len()
 
         # tfidf
         if fit:
-            df_tfidf = tfidf.fit_transform(sr)
+            df_tfidf = tfidf.fit_transform(df[col])
         else:
-            df_tfidf = tfidf.transform(sr)
-        df_tfidf.columns = [f"tfidf_{name}_{word}" for word in df_tfidf.columns]
+            df_tfidf = tfidf.transform(df[col])
+        df_tfidf.columns = [f"tfidf_{col}_{word}" for word in df_tfidf.columns]
 
-        return df_result
+        df_result = pd.concat([df_result, df_tfidf], axis=1)
 
+        return df_result, col, tfidf
+
+    @staticmethod
     def _parallel_process_text_columns(
-        self, df: pd.DataFrame, fit: bool
-    ) -> pd.DataFrame:
-        dfs = Parallel(n_jobs=-1)(
-            delayed(self._process_text_column)(df[col], tfidf, fit)
-            for col, tfidf in self._tfidf_container.items()
+        df: pd.DataFrame, col2tfidf: dict[str, TfidfProcessor], fit: bool
+    ) -> tuple[pd.DataFrame, dict[str, TfidfProcessor]]:
+        df_result = pd.DataFrame(index=df.index)
+
+        results = Parallel(n_jobs=-1)(
+            delayed(PreProcessor._process_text_column)(df, col, tfidf, fit)
+            for col, tfidf in col2tfidf.items()
         )
-        return pd.concat(dfs, axis=1)
+
+        for df_col, col, tfidf in results:
+            df_result = pd.concat([df_result, df_col], axis=1)
+            col2tfidf[col] = tfidf
+
+        return df_result, col2tfidf
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         df_result = df.copy()
 
         # process text columns
         logger.info("Processing text columns")
-        df_text = self._parallel_process_text_columns(df_result, fit=True)
+        df_text, self._tfidf_container = self._parallel_process_text_columns(
+            df_result, self._tfidf_container, fit=True
+        )
         df_result = pd.concat([df_result, df_text], axis=1)
         df_result = df_result.drop(columns=self._tfidf_container.keys())
 
@@ -77,7 +88,9 @@ class PreProcessor(BaseFittableProcessor):
         df_result = df.copy()
 
         # process text columns
-        df_text = self._parallel_process_text_columns(df_result, fit=False)
+        df_text, _ = self._parallel_process_text_columns(
+            df_result, self._tfidf_container, fit=False
+        )
         df_result = pd.concat([df_result, df_text], axis=1)
         df_result = df_result.drop(columns=self._tfidf_container.keys())
 
