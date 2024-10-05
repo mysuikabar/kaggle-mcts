@@ -13,7 +13,7 @@ class FeatureConfig:
     use_features: list[str] = field(
         default_factory=lambda: ["agent_property", "lud_rules"]
     )
-    feature_store_dir: Path | None = None
+    feature_store_dir: Path | None = None  # REPO_ROOT / "data/feature_store"
 
 
 @dataclass
