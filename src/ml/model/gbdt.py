@@ -56,3 +56,51 @@ class LightGBMModel(BaseModel):
         if self._model is None:
             raise ValueError("Model has not been trained.")
         return self._model.predict(X, num_iteration=self._model.best_iteration)  # type: ignore
+
+
+@dataclass
+class XGBoostConfig(BaseConfig):
+    objective: str
+    eval_metric: str
+    booster: str
+    max_depth: int
+    learning_rate: float
+    subsample: float
+    colsample_bytree: float
+    num_boost_round: int
+    early_stopping_rounds: int
+    device: str | None = None
+
+
+class XGBoostModel(BaseModel):
+    def __init__(self, config: XGBoostConfig) -> None:
+        super().__init__(config)
+        self._model: xgb.Booster | None = None
+
+    def fit(
+        self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
+    ) -> Self:
+        params = self._params.copy()
+        num_boost_round = params.pop("num_boost_round")
+        early_stopping_rounds = params.pop("early_stopping_rounds")
+
+        dtrain = xgb.DMatrix(X_tr, label=y_tr)
+        dvalid = xgb.DMatrix(X_va, label=y_va)
+        evals = [(dtrain, "train"), (dvalid, "valid")]
+
+        self._model = xgb.train(
+            params=params,
+            dtrain=dtrain,
+            evals=evals,
+            num_boost_round=num_boost_round,
+            early_stopping_rounds=early_stopping_rounds,
+            verbose_eval=100,
+        )
+
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        if self._model is None:
+            raise ValueError("Model has not been trained.")
+        dtest = xgb.DMatrix(X)
+        return self._model.predict(dtest)
