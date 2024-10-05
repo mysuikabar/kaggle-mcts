@@ -41,7 +41,7 @@ def main(config: Config) -> None:
     feature_processor = FeatureProcessor(features, config.feature.feature_store_dir)
     X = feature_processor.transform(X)
     feature_processor.save("feature_processor.pickle")
-    logger.info(f"Feature engineered data shape: {X.shape}")
+    logger.info(f"Feature added data shape: {X.shape}")
 
     # cross validation
     model_factory = ModelFactory(config.model.type, config.model.config)
@@ -59,6 +59,7 @@ def main(config: Config) -> None:
         processor = PreProcessor(config.preprocessor.tfidf_max_features)
         X_tr = processor.fit_transform(X_tr)
         X_va = processor.transform(X_va)
+        logger.info(f"Processed data shape: {X_tr.shape}")
 
         # train
         model = model_factory.build()
