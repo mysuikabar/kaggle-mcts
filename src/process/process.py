@@ -25,6 +25,7 @@ class PreProcessor(BaseFittableProcessor):
             "GameRulesetName",
             "EnglishRules",
             "LudRules",
+            "LudRules_game",
             "num_wins_agent1",
             "num_draws_agent1",
             "num_losses_agent1",
