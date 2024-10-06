@@ -29,13 +29,13 @@ config_kaggle_env = Config(
     ),
 )
 
-
 if os.getenv("LOCAL_ENVIRONMENT"):
     config = config_local_env
     sys.path.append(str(config.evaluation_api_path))
-    import kaggle_evaluation.mcts_inference_server  # type: ignore
 else:
     config = config_kaggle_env
+
+import kaggle_evaluation.mcts_inference_server  # noqa: E402
 
 
 def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
