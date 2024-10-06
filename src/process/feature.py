@@ -45,6 +45,13 @@ class FeatureStore:
         self._dir_path = dir_path
         self._dir_path.mkdir(parents=True, exist_ok=True)
 
+    def has_feature(self, feature_name: str) -> bool:
+        """
+        Check if a feature exists in the store.
+        """
+        file_path = self._dir_path / f"{feature_name}.parquet"
+        return file_path.exists()
+
     def save(self, df: pl.DataFrame, feature_name: str) -> None:
         """
         Save a feature DataFrame to a parquet file.
