@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from .base import BaseConfig, BaseModel
-from .gbdt import LightGBMModel
+from .gbdt import LightGBMModel, XGBoostModel
 
 
 class ModelFactory:
@@ -10,6 +10,8 @@ class ModelFactory:
 
         if model_type == "lightgbm":
             self._model_cls = LightGBMModel
+        elif model_type == "xgboost":
+            self._model_cls = XGBoostModel  # type: ignore
         else:
             raise ValueError(f"Unknown model type: {model_type}")
 

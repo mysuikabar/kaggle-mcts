@@ -65,10 +65,15 @@ class XGBoostConfig(BaseConfig):
     objective: str
     eval_metric: str
     booster: str
-    max_depth: int
     learning_rate: float
+    min_split_loss: float
+    max_depth: int
+    min_child_weight: float
     subsample: float
+    reg_lambda: float
+    reg_alpha: float
     colsample_bytree: float
+    colsample_bylevel: float
     num_boost_round: int
     early_stopping_rounds: int
     device: str | None = None
@@ -86,8 +91,8 @@ class XGBoostModel(BaseModel):
         num_boost_round = params.pop("num_boost_round")
         early_stopping_rounds = params.pop("early_stopping_rounds")
 
-        dtrain = xgb.DMatrix(X_tr, label=y_tr)
-        dvalid = xgb.DMatrix(X_va, label=y_va)
+        dtrain = xgb.DMatrix(X_tr, label=y_tr, enable_categorical=True)
+        dvalid = xgb.DMatrix(X_va, label=y_va, enable_categorical=True)
         evals = [(dtrain, "train"), (dvalid, "valid")]
 
         self._model = xgb.train(
@@ -104,5 +109,5 @@ class XGBoostModel(BaseModel):
     def predict(self, X: np.ndarray) -> np.ndarray:
         if self._model is None:
             raise ValueError("Model has not been trained.")
-        dtest = xgb.DMatrix(X)
+        dtest = xgb.DMatrix(X, enable_categorical=True)
         return self._model.predict(dtest)
