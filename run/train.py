@@ -5,22 +5,29 @@ import hydra
 import numpy as np
 import pandas as pd
 import wandb
+from config.train import Config
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
-from sklearn.model_selection import GroupKFold
 
-from config.train import Config
 from features import feature_expressions_master
 from metric import calculate_metrics
 from ml.model.factory import ModelFactory
 from process.feature import FeatureProcessor
 from process.process import PreProcessor
+from process.text import TfidfProcessor
 from utils.seed import seed_everything
 
 logger = getLogger(__name__)
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
+
+
+def load_processor(tfidf_dir: Path) -> PreProcessor:
+    col2tfidf: dict[str, TfidfProcessor] = {}
+    for path in tfidf_dir.iterdir():
+        col2tfidf[path.stem] = TfidfProcessor.load(path)
+    return PreProcessor(col2tfidf)
 
 
 @hydra.main(version_base=None, config_name="config")
@@ -32,7 +39,6 @@ def main(config: Config) -> None:
     df = pd.read_csv(config.data_path)
     X = df.drop(columns=[config.target])
     y = df[config.target].values
-    groups = df[config.groups].values
     logger.info(f"Raw data shape: {df.shape}")
 
     # feature engineering
@@ -46,17 +52,18 @@ def main(config: Config) -> None:
     # cross validation
     model_factory = ModelFactory(config.model.type, config.model.config)
     oof = np.zeros(len(y))
-    fold_assignments = np.zeros(len(y), dtype=int)
+    fold_assignments = pd.read_csv(config.preprocess_dir / "fold_assignments.csv")
 
-    kf = GroupKFold(config.n_splits)
-    for fold, (idx_tr, idx_va) in enumerate(kf.split(X, y, groups), start=1):
+    for fold in sorted(fold_assignments["fold"].unique()):
         logger.info(f"Training fold {fold}")
 
+        idx_tr = fold_assignments[fold_assignments["fold"] != fold].index
+        idx_va = fold_assignments[fold_assignments["fold"] == fold].index
         X_tr, y_tr = X.iloc[idx_tr], y[idx_tr]
         X_va, y_va = X.iloc[idx_va], y[idx_va]
 
         # preprocess
-        processor = PreProcessor(config.preprocessor.tfidf_max_features)
+        processor = load_processor(config.preprocess_dir / f"fold_{fold}")
         X_tr = processor.fit_transform(X_tr)
         X_va = processor.transform(X_va)
         logger.info(f"Processed data shape: {X_tr.shape}")

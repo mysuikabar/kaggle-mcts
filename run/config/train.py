@@ -5,7 +5,7 @@ from typing import Any
 from consts import REPO_ROOT
 from ml.model.base import BaseConfig
 
-from .model.gbdt import lightgbm_config
+from .model.gbdt import xgboost_config
 
 
 @dataclass
@@ -17,14 +17,9 @@ class FeatureConfig:
 
 
 @dataclass
-class PreProcessorConfig:
-    tfidf_max_features: int = 600
-
-
-@dataclass
 class ModelConfig:
-    type: str = "lightgbm"
-    config: BaseConfig = lightgbm_config
+    type: str = "xgboost"
+    config: BaseConfig = xgboost_config
 
 
 @dataclass
@@ -47,12 +42,10 @@ hydra_config = {
 @dataclass
 class Config:
     seed: int = 42
-    n_splits: int = 5
     target: str = "utility_agent1"
-    groups: str = "GameRulesetName"
     data_path: Path = REPO_ROOT / "data/raw/train.csv"
+    preprocess_dir: Path = REPO_ROOT / "outputs/preprocess/mcts-01-preprocess"
     feature: FeatureConfig = FeatureConfig()
-    preprocessor: PreProcessorConfig = PreProcessorConfig()
     model: ModelConfig = ModelConfig()
     wandb: WandbConfig = WandbConfig()
     hydra: Any = field(default_factory=lambda: hydra_config)
