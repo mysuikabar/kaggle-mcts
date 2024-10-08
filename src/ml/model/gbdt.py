@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import lightgbm as lgb
 import numpy as np
 import xgboost as xgb
+from catboost import CatBoost, Pool
 from typing_extensions import Self
 
 from .base import BaseConfig, BaseModel
@@ -111,3 +112,54 @@ class XGBoostModel(BaseModel):
             raise ValueError("Model has not been trained.")
         dtest = xgb.DMatrix(X, enable_categorical=True)
         return self._model.predict(dtest)
+
+
+@dataclass
+class CatBoostConfig(BaseConfig):
+    loss_function: str
+    eval_metric: str
+    learning_rate: float
+    depth: int
+    l2_leaf_reg: float
+    random_strength: float
+    bagging_temperature: float
+    od_type: str
+    od_wait: int
+    iterations: int
+    early_stopping_rounds: int
+    task_type: str | None = None
+
+
+class CatBoostModel(BaseModel):
+    def __init__(self, config: CatBoostConfig) -> None:
+        super().__init__(config)
+        self._model: CatBoost | None = None
+
+    def fit(
+        self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
+    ) -> Self:
+        params = self._params.copy()
+        early_stopping_rounds = params.pop("early_stopping_rounds")
+        cat_features = X_tr.select_dtypes(include=["category"]).columns.tolist()  # type: ignore
+
+        train_pool = Pool(X_tr, y_tr, cat_features=cat_features)
+        eval_pool = Pool(X_va, y_va, cat_features=cat_features)
+
+        self._model = CatBoost(params)
+        self._model.fit(
+            train_pool,
+            eval_set=eval_pool,
+            use_best_model=True,
+            early_stopping_rounds=early_stopping_rounds,
+            verbose=100,
+        )
+
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        if self._model is None:
+            raise ValueError("Model has not been trained.")
+
+        cat_features = X.select_dtypes(include=["category"]).columns.tolist()
+        test_pool = Pool(X, cat_features=cat_features)
+        return self._model.predict(test_pool, prediction_type="RawFormulaVal")

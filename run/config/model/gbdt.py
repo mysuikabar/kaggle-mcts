@@ -1,4 +1,4 @@
-from ml.model.gbdt import LightGBMConfig, XGBoostConfig
+from ml.model.gbdt import CatBoostConfig, LightGBMConfig, XGBoostConfig
 
 lightgbm_config = LightGBMConfig(
     objective="regression",
@@ -14,7 +14,6 @@ lightgbm_config = LightGBMConfig(
     max_bin=255,
     device="gpu",
 )
-
 
 xgboost_config = XGBoostConfig(
     objective="reg:squarederror",
@@ -32,4 +31,19 @@ xgboost_config = XGBoostConfig(
     num_boost_round=2000,
     early_stopping_rounds=10,
     device="gpu",
+)
+
+catboost_config = CatBoostConfig(
+    loss_function="RMSE",
+    eval_metric="RMSE",
+    learning_rate=0.05,
+    depth=6,
+    l2_leaf_reg=1,
+    random_strength=1,
+    bagging_temperature=1,
+    od_type="Iter",
+    od_wait=10,
+    iterations=2000,
+    early_stopping_rounds=10,
+    task_type="GPU",
 )
