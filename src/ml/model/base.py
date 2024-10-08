@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from typing_extensions import Self
 
 from ..utils import to_dict
@@ -20,12 +21,12 @@ class BaseModel(ABC):
 
     @abstractmethod
     def fit(
-        self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
+        self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
     ) -> Self:
         return self
 
     @abstractmethod
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
         pass
 
     def save(self, filepath: str | Path) -> None:

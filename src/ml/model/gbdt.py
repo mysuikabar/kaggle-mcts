@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import lightgbm as lgb
 import numpy as np
+import pandas as pd
 import xgboost as xgb
 from catboost import CatBoost, Pool
 from typing_extensions import Self
@@ -31,7 +32,7 @@ class LightGBMModel(BaseModel):
         self._model: lgb.Booster | None = None
 
     def fit(
-        self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
+        self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
     ) -> Self:
         params = self._params.copy()
         num_boost_round = params.pop("num_boost_round")
@@ -55,7 +56,7 @@ class LightGBMModel(BaseModel):
 
         return self
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
         if self._model is None:
             raise ValueError("Model has not been trained.")
         return self._model.predict(X, num_iteration=self._model.best_iteration)  # type: ignore
@@ -86,7 +87,7 @@ class XGBoostModel(BaseModel):
         self._model: xgb.Booster | None = None
 
     def fit(
-        self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
+        self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
     ) -> Self:
         params = self._params.copy()
         num_boost_round = params.pop("num_boost_round")
@@ -107,7 +108,7 @@ class XGBoostModel(BaseModel):
 
         return self
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
         if self._model is None:
             raise ValueError("Model has not been trained.")
         dtest = xgb.DMatrix(X, enable_categorical=True)
@@ -136,11 +137,11 @@ class CatBoostModel(BaseModel):
         self._model: CatBoost | None = None
 
     def fit(
-        self, X_tr: np.ndarray, y_tr: np.ndarray, X_va: np.ndarray, y_va: np.ndarray
+        self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
     ) -> Self:
         params = self._params.copy()
         early_stopping_rounds = params.pop("early_stopping_rounds")
-        cat_features = X_tr.select_dtypes(include=["category"]).columns.tolist()  # type: ignore
+        cat_features = X_tr.select_dtypes(include=["category"]).columns.tolist()
 
         train_pool = Pool(X_tr, y_tr, cat_features=cat_features)
         eval_pool = Pool(X_va, y_va, cat_features=cat_features)
@@ -156,7 +157,7 @@ class CatBoostModel(BaseModel):
 
         return self
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
         if self._model is None:
             raise ValueError("Model has not been trained.")
 
