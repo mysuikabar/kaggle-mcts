@@ -60,7 +60,9 @@ def main(config: Config) -> None:
         fold_assignments[idx_va] = fold
 
     # save fold assignments
-    pd.Series(fold_assignments).to_csv("fold_assignments.csv", index=False)
+    pd.Series(fold_assignments, index=X.index, name="fold").to_csv(
+        "fold_assignments.csv"
+    )
 
 
 if __name__ == "__main__":
