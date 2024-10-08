@@ -18,5 +18,10 @@
         "--disallow-untyped-defs"
     ],
     "interactiveWindow.executeWithShiftEnter": false,
-    "python.REPL.sendToNativeREPL": false
+    "python.REPL.sendToNativeREPL": false,
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }
