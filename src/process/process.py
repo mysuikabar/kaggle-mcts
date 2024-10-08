@@ -31,6 +31,7 @@ class PreProcessor(BaseFittableProcessor):
         df_result = df.copy()
 
         # tfidf
+        logger.info("Transforming tf-idf")
         df_tfidf = parallel_transform_tfidf(df, self._col2tfidf)
         df_result = pd.concat([df_result, df_tfidf], axis=1)
         df_result = df_result.drop(columns=self._col2tfidf.keys())
@@ -39,6 +40,7 @@ class PreProcessor(BaseFittableProcessor):
         df_result = df_result.drop(columns=self._drop_columns, errors="ignore")
 
         # convert categorical columns
+        logger.info("Converting categorical columns")
         if fit:
             df_result = self._cat_converter.fit_transform(df_result)
         else:

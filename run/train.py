@@ -52,13 +52,15 @@ def main(config: Config) -> None:
     # cross validation
     model_factory = ModelFactory(config.model.type, config.model.config)
     oof = np.zeros(len(y))
-    fold_assignments = pd.read_csv(config.preprocess_dir / "fold_assignments.csv")
+    fold_assignments = pd.read_csv(
+        config.preprocess_dir / "fold_assignments.csv", index_col=0
+    )["fold"]
 
-    for fold in sorted(fold_assignments["fold"].unique()):
+    for fold in sorted(fold_assignments.unique()):
         logger.info(f"Training fold {fold}")
 
-        idx_tr = fold_assignments[fold_assignments["fold"] != fold].index
-        idx_va = fold_assignments[fold_assignments["fold"] == fold].index
+        idx_tr = fold_assignments[fold_assignments != fold].index
+        idx_va = fold_assignments[fold_assignments == fold].index
         X_tr, y_tr = X.iloc[idx_tr], y[idx_tr]
         X_va, y_va = X.iloc[idx_va], y[idx_va]
 
@@ -68,13 +70,10 @@ def main(config: Config) -> None:
         X_va = processor.transform(X_va)
         logger.info(f"Processed data shape: {X_tr.shape}")
 
-        # train
+        # train & predict
         model = model_factory.build()
         model.fit(X_tr, y_tr, X_va, y_va)
-
-        # predict
         oof[idx_va] = model.predict(X_va)
-        fold_assignments[idx_va] = fold
 
         # save
         Path(f"fold_{fold}").mkdir(exist_ok=True)
