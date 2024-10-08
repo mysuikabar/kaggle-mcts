@@ -16,7 +16,7 @@ class CategoricalConverter:
 
     def fit(self, df: pd.DataFrame) -> Self:
         self._cat_mapping = {
-            feature: pd.CategoricalDtype(categories=list(set(df[feature])))
+            feature: "category"
             for feature in df.columns[df.dtypes == object]  # noqa: E721
         }
         return self
