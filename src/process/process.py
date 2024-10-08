@@ -18,6 +18,8 @@ class PreProcessor(BaseFittableProcessor):
         self._drop_columns = [
             "Id",
             "GameRulesetName",
+            "agent1",
+            "agent2",
             "EnglishRules",
             "LudRules",
             "LudRules_game",
