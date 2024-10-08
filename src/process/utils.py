@@ -1,13 +1,5 @@
-import numpy as np
 import pandas as pd
-import polars as pl
 from typing_extensions import Self
-
-
-def constant_columns(df: pl.DataFrame) -> list[str]:
-    return list(
-        np.array(df.columns)[df.select(pl.all().n_unique() == 1).to_numpy().ravel()]
-    )
 
 
 class CategoricalConverter:
