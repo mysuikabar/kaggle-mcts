@@ -5,7 +5,7 @@ import pandas as pd
 
 from .base import BaseFittableProcessor
 from .consts import USELESS_COLUMNS
-from .text import TfidfProcessor
+from .text import TfidfProcessor, parallel_transform_tfidf
 from .utils import CategoricalConverter
 
 logger = getLogger(__name__)
@@ -31,9 +31,8 @@ class PreProcessor(BaseFittableProcessor):
         df_result = df.copy()
 
         # tfidf
-        for col, fitted_tfidf in self._col2tfidf.items():
-            df_tfidf = fitted_tfidf.transform(df_result[col])
-            df_result = pd.concat([df_result, df_tfidf], axis=1)
+        df_tfidf = parallel_transform_tfidf(df, self._col2tfidf)
+        df_result = pd.concat([df_result, df_tfidf], axis=1)
         df_result = df_result.drop(columns=self._col2tfidf.keys())
 
         # drop columns

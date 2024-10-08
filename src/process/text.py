@@ -2,6 +2,7 @@ import re
 import string
 
 import pandas as pd
+from joblib import Parallel, delayed
 from sklearn.feature_extraction.text import TfidfVectorizer
 from typing_extensions import Self
 
@@ -49,3 +50,32 @@ class TfidfProcessor(BaseFittableProcessor):
 
     def fit_transform(self, sr: pd.Series) -> pd.DataFrame:
         return self.fit(sr).transform(sr)
+
+
+def _fit_tfidf(sr: pd.Series, max_features: int) -> TfidfProcessor:
+    processor = TfidfProcessor(max_features)
+    return processor.fit(sr)
+
+
+def parallel_fit_tfidf(
+    df: pd.DataFrame, text_cols: list[str], max_features: int
+) -> dict[str, TfidfProcessor]:
+    results = Parallel(n_jobs=-1)(
+        delayed(_fit_tfidf)(df[feature], max_features) for feature in text_cols
+    )
+    return dict(zip(text_cols, results))
+
+
+def parallel_transform_tfidf(
+    df: pd.DataFrame, processors: dict[str, TfidfProcessor]
+) -> pd.DataFrame:
+    results = Parallel(n_jobs=-1)(
+        delayed(processor.transform)(df[feature])
+        for feature, processor in processors.items()
+    )
+
+    # カラム名を被らないように feature_col　にしてconcat
+    for feature, result in zip(processors.keys(), results):
+        result.columns = [f"{feature}_{col}" for col in result.columns]
+
+    return pd.concat(results, axis=1)

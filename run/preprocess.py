@@ -6,32 +6,17 @@ import numpy as np
 import pandas as pd
 from config.preprocess import Config
 from hydra.core.config_store import ConfigStore
-from joblib import Parallel, delayed
 from sklearn.model_selection import GroupKFold
 
 from features import feature_expressions_master
 from process.feature import FeatureProcessor
-from process.text import TfidfProcessor
+from process.text import parallel_fit_tfidf
 from utils.seed import seed_everything
 
 logger = getLogger(__name__)
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
-
-
-def _fit_tfidf(sr: pd.Series, max_features: int) -> TfidfProcessor:
-    tfidf = TfidfProcessor(max_features)
-    return tfidf.fit(sr)
-
-
-def parallel_fit_tfidf(
-    df: pd.DataFrame, text_cols: list[str], max_features: int
-) -> dict[str, TfidfProcessor]:
-    results = Parallel(n_jobs=-1)(
-        delayed(_fit_tfidf)(df[feature], max_features) for feature in text_cols
-    )
-    return dict(zip(text_cols, results))
 
 
 @hydra.main(version_base=None, config_name="config")
