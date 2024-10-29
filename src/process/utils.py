@@ -18,3 +18,10 @@ class CategoricalConverter:
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         return self.fit(df).transform(df)
+
+
+def filter_features(importance: pd.DataFrame, num_features: int) -> list[str]:
+    filtered_importance = importance.sort_values("importance", ascending=False).head(
+        num_features
+    )
+    return filtered_importance["feature"].tolist()
