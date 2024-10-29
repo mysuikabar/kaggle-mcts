@@ -61,6 +61,17 @@ class LightGBMModel(BaseModel):
             raise ValueError("Model has not been trained.")
         return self._model.predict(X, num_iteration=self._model.best_iteration)  # type: ignore
 
+    @property
+    def feature_importance(self) -> pd.DataFrame:
+        if self._model is None:
+            raise ValueError("Model has not been trained.")
+        return pd.DataFrame(
+            {
+                "feature": self._model.feature_name(),
+                "importance": self._model.feature_importance(),
+            }
+        )
+
 
 @dataclass
 class XGBoostConfig(BaseConfig):
@@ -114,6 +125,18 @@ class XGBoostModel(BaseModel):
         dtest = xgb.DMatrix(X, enable_categorical=True)
         return self._model.predict(dtest)
 
+    @property
+    def feature_importance(self) -> pd.DataFrame:
+        if self._model is None:
+            raise ValueError("Model has not been trained.")
+        importances = self._model.get_score(importance_type="total_gain")
+        return pd.DataFrame(
+            {
+                "feature": list(importances.keys()),
+                "importance": list(importances.values()),
+            }
+        )
+
 
 @dataclass
 class CatBoostConfig(BaseConfig):
@@ -164,3 +187,14 @@ class CatBoostModel(BaseModel):
         cat_features = X.select_dtypes(include=["category"]).columns.tolist()
         test_pool = Pool(X, cat_features=cat_features)
         return self._model.predict(test_pool, prediction_type="RawFormulaVal")
+
+    @property
+    def feature_importance(self) -> pd.DataFrame:
+        if self._model is None:
+            raise ValueError("Model has not been trained.")
+        return pd.DataFrame(
+            {
+                "feature": self._model.feature_names_,
+                "importance": self._model.feature_importances_,
+            }
+        )

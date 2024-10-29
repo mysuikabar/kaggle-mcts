@@ -76,9 +76,11 @@ def main(config: Config) -> None:
         oof[idx_va] = model.predict(X_va)
 
         # save
-        Path(f"fold_{fold}").mkdir(exist_ok=True)
-        processor.save(f"fold_{fold}/processor.pickle")
-        model.save(f"fold_{fold}/model.pickle")
+        output_dir = Path(f"fold_{fold}")
+        output_dir.mkdir(exist_ok=True)
+        processor.save(output_dir / "processor.pickle")
+        model.save(output_dir / "model.pickle")
+        model.feature_importance.to_csv(output_dir / "importance.csv", index=False)
 
     # evaluate
     metrics = calculate_metrics(y, oof, fold_assignments)
