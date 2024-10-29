@@ -85,6 +85,7 @@ def main(config: Config) -> None:
         output_dir.mkdir(exist_ok=True)
         processor.save(output_dir / "processor.pickle")
         model.save(output_dir / "model.pickle")
+        X_tr.columns.to_series().to_csv(output_dir / "features.csv", index=False)
         model.feature_importance.to_csv(output_dir / "importance.csv", index=False)
 
     # evaluate
