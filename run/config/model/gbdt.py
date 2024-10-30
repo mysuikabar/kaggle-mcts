@@ -9,8 +9,8 @@ lightgbm_config = LightGBMConfig(
     feature_fraction=0.9,
     bagging_fraction=0.8,
     bagging_freq=5,
-    num_boost_round=2000,
-    early_stopping_rounds=10,
+    num_boost_round=10000,
+    early_stopping_rounds=50,
     max_bin=255,
     device="gpu",
 )
@@ -28,8 +28,8 @@ xgboost_config = XGBoostConfig(
     reg_alpha=1,
     colsample_bytree=1,
     colsample_bylevel=1,
-    num_boost_round=2000,
-    early_stopping_rounds=10,
+    num_boost_round=10000,
+    early_stopping_rounds=50,
     device="gpu",
 )
 
@@ -43,7 +43,7 @@ catboost_config = CatBoostConfig(
     bagging_temperature=1,
     od_type="Iter",
     od_wait=10,
-    iterations=2000,
-    early_stopping_rounds=10,
+    iterations=10000,
+    early_stopping_rounds=50,
     task_type="GPU",
 )
