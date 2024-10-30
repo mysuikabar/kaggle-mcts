@@ -1,12 +1,12 @@
-import glob
 import os
 import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import polars as pl
-
 from config.infer import Config
+
 from consts import REPO_ROOT
 from ml.model.factory import ModelFactory
 from process.feature import FeatureProcessor
@@ -48,13 +48,14 @@ def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
 
     preds = []
 
-    for dir_path in glob.glob(str(config.dataset_dir / "fold_*")):
+    for dir_path in config.dataset_dir.glob("fold_*"):
         # process test data
-        processor = PreProcessor.load(f"{dir_path}/processor.pickle")
-        X = processor.transform(test)
+        processor = PreProcessor.load(dir_path / "processor.pickle")
+        features = pd.read_csv(dir_path / "features.csv")["feature"].tolist()
+        X = processor.transform(test).filter(features)
 
         # predict
-        model = ModelFactory.load(f"{dir_path}/model.pickle")
+        model = ModelFactory.load(dir_path / "model.pickle")
         pred = model.predict(X)
 
         pred = postprocess(pred)
