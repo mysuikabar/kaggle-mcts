@@ -92,6 +92,6 @@ feature_expressions_master["baseline_features"] = [
         + pl.col("HopDecisionFriendToEnemy")
         + pl.col("SlideDecisionToEnemy")
     ).alias("AggressiveActionsRatio"),
-    pl.col("PlayoutsPerSecond").clip(0, 25000),
-    pl.col("MovesPerSecond").clip(0, 1000000),
+    # pl.col("PlayoutsPerSecond").clip(0, 25000),
+    # pl.col("MovesPerSecond").clip(0, 1000000),
 ]
