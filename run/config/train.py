@@ -46,7 +46,7 @@ class Config:
     target: str = "utility_agent1"
     data_path: Path = REPO_ROOT / "data/raw/train.csv"
     preprocess_dir: Path = REPO_ROOT / "outputs/preprocess/mcts-01-preprocess"
-    importance_dir: Path = REPO_ROOT / "outputs/mcts-05-xgb"
+    importance_dir: Path | None = REPO_ROOT / "outputs/mcts-05-xgb"
     num_features: int = 500
     feature: FeatureConfig = FeatureConfig()
     model: ModelConfig = ModelConfig()
