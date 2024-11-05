@@ -11,7 +11,7 @@ from .model.gbdt import xgboost_config
 @dataclass
 class FeatureConfig:
     use_features: list[str] = field(
-        default_factory=lambda: ["agent_property", "lud_rules"]
+        default_factory=lambda: ["agent_property", "lud_rules", "baseline_features"]
     )
     feature_store_dir: Path | None = None  # REPO_ROOT / "data/feature_store"
 
