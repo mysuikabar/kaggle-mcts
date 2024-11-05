@@ -5,7 +5,7 @@ from typing import Any
 from consts import REPO_ROOT
 from ml.model.base import BaseConfig
 
-from .model.gbdt import xgboost_config
+from .model.gbdt import catboost_config
 
 
 @dataclass
@@ -18,8 +18,8 @@ class FeatureConfig:
 
 @dataclass
 class ModelConfig:
-    type: str = "xgboost"
-    config: BaseConfig = xgboost_config
+    type: str = "catboost"
+    config: BaseConfig = catboost_config
 
 
 @dataclass
