@@ -26,6 +26,7 @@ class ModelConfig:
 class WandbConfig:
     project: str = "kaggle-mcts"
     name: str = "run_name"
+    notes: str | None = "description"
     enable: bool = False
 
 

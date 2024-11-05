@@ -103,6 +103,7 @@ def main(config: Config) -> None:
         wandb.init(
             project=config.wandb.project,
             name=config.wandb.name,
+            notes=config.wandb.notes,
             config=OmegaConf.to_container(config),  # type: ignore
         )
         wandb.log(metrics)
