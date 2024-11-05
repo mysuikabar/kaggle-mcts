@@ -7,6 +7,8 @@ import click
 import nbformat
 from kaggle.api.kaggle_api_extended import KaggleApi
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def combine_files(file_path: Path, output_dir: Path) -> Path:
     """
@@ -14,7 +16,15 @@ def combine_files(file_path: Path, output_dir: Path) -> Path:
     """
     output_file = output_dir / "combined.py"
     subprocess.run(
-        ["stickytape", str(file_path), "--output-file", str(output_file)], check=True
+        [
+            "stickytape",
+            str(file_path),
+            "--add-python-path",
+            str(REPO_ROOT / "src"),
+            "--output-file",
+            str(output_file),
+        ],
+        check=True,
     )
     return output_file
 
