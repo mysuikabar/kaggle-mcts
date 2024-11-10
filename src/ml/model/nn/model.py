@@ -12,6 +12,8 @@ from typing_extensions import Self
 from ..base import BaseConfig, BaseModel
 from .dataset import EvalTabularDataset, TrainingTabularDataset
 
+NUM_WORKERS = 4  # os.cpu_count()
+
 
 @dataclass
 class NNConfig(BaseConfig):
@@ -120,10 +122,16 @@ class NNModel(BaseModel):
         )
 
         loader_tr = DataLoader(
-            dataset_tr, batch_size=self._params["batch_size"], shuffle=True
+            dataset_tr,
+            batch_size=self._params["batch_size"],
+            shuffle=True,
+            num_workers=NUM_WORKERS,
         )
         loader_va = DataLoader(
-            dataset_va, batch_size=self._params["batch_size"], shuffle=False
+            dataset_va,
+            batch_size=self._params["batch_size"],
+            shuffle=False,
+            num_workers=NUM_WORKERS,
         )
 
         # initialize model
