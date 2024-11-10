@@ -26,7 +26,11 @@ class BaseTabularDataset(Dataset):
         self._categorical = {}
         self._encoders = encoders
         for feature in categorical_features:
-            encoded = self._encoders[feature].transform(X[feature])
+            known_categories = set(self._encoders[feature].classes_)
+            X_processed = X[feature].map(
+                lambda x: x if x in known_categories else "<UNK>"
+            )
+            encoded = self._encoders[feature].transform(X_processed)
             self._categorical[feature] = torch.tensor(encoded, dtype=torch.long)
 
         # target
@@ -54,14 +58,13 @@ class TrainingTabularDataset(BaseTabularDataset):
         y: np.ndarray | None = None,
     ) -> None:
         numeric_features = [col for col in X.columns if col not in categorical_features]
-        scaler = StandardScaler()
-        scaler.fit(X[numeric_features])
+        scaler = StandardScaler().fit(X[numeric_features])
 
         encoders = {}
         for feature in categorical_features:
-            encoder = LabelEncoder()
-            encoder.fit(X[feature])
-            encoders[feature] = encoder
+            unique_values = X[feature].unique().tolist()
+            unique_values.append("<UNK>")
+            encoders[feature] = LabelEncoder().fit(unique_values)
 
         super().__init__(X, categorical_features, scaler, encoders, y)
 
