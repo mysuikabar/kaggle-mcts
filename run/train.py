@@ -91,7 +91,10 @@ def main(config: Config) -> None:
         processor.save(output_dir / "processor.pickle")
         model.save(output_dir / "model.pickle")
         X_tr.columns.to_series().to_csv(output_dir / "features.csv", index=False)
-        model.feature_importance.to_csv(output_dir / "importance.csv", index=False)
+        try:
+            model.feature_importance.to_csv(output_dir / "importance.csv", index=False)
+        except AttributeError:
+            logger.info("Model does not have feature importance")
 
     # evaluate
     metrics = calculate_metrics(y, oof, fold_assignments)
