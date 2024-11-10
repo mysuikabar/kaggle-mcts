@@ -2,6 +2,7 @@ from pathlib import Path
 
 from .base import BaseConfig, BaseModel
 from .gbdt import CatBoostModel, LightGBMModel, XGBoostModel
+from .nn import NNModel
 
 
 class ModelFactory:
@@ -14,6 +15,8 @@ class ModelFactory:
             self._model_cls = XGBoostModel  # type: ignore
         elif model_type == "catboost":
             self._model_cls = CatBoostModel  # type: ignore
+        elif model_type == "nn":
+            self._model_cls = NNModel  # type: ignore
         else:
             raise ValueError(f"Unknown model type: {model_type}")
 
