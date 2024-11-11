@@ -6,6 +6,7 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from torch.utils.data import DataLoader
 from typing_extensions import Self
 
@@ -114,6 +115,7 @@ class NNModel(BaseModel):
     def fit(
         self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
     ) -> Self:
+        # data
         X_tr = self._processor.fit_transform(X_tr, self._categorical_feature_dims)
         X_va = self._processor.transform(X_va)
 
@@ -126,6 +128,7 @@ class NNModel(BaseModel):
             batch_size=self._params["batch_size"],
         )
 
+        # model
         self._model = NNModule(
             num_numerical_features=X_tr.shape[1] - len(self._categorical_features),
             categorical_feature_dims=self._params["categorical_feature_dims"],
@@ -135,17 +138,32 @@ class NNModel(BaseModel):
             learning_rate=self._params["learning_rate"],
         )
 
+        # training
+        early_stop_callback = EarlyStopping(
+            monitor="val_loss", patience=self._params["early_stopping_patience"]
+        )
+        checkpoint_callback = ModelCheckpoint(
+            monitor="val_loss",
+            save_top_k=1,
+            mode="min",
+            filename="best-model-{epoch:02d}-{val_loss:.4f}",
+        )
         self._trainer = pl.Trainer(
             max_epochs=self._params["max_epochs"],
-            callbacks=[
-                pl.callbacks.EarlyStopping(
-                    monitor="val_loss", patience=self._params["early_stopping_patience"]
-                )
-            ],
-            accelerator="cpu",
+            callbacks=[early_stop_callback, checkpoint_callback],
         )
-
         self._trainer.fit(self._model, datamodule=self._data_module)
+
+        # load best model
+        self._model = NNModule.load_from_checkpoint(
+            checkpoint_callback.best_model_path,
+            num_numerical_features=X_tr.shape[1] - len(self._categorical_features),
+            categorical_feature_dims=self._params["categorical_feature_dims"],
+            embedding_dim=self._params["embedding_dim"],
+            hidden_dims=self._params["hidden_dims"],
+            dropout_rate=self._params["dropout_rate"],
+            learning_rate=self._params["learning_rate"],
+        )
 
         return self
 
