@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from typing_extensions import Self
 
 from ..base import BaseConfig, BaseModel
-from .dataset import EvalTabularDataset, TrainingTabularDataset
+from .dataset import MCTSDataModule, MCTSDataset
 
 NUM_WORKERS = 4  # os.cpu_count()
 
@@ -27,7 +27,7 @@ class NNConfig(BaseConfig):
     batch_size: int = 64
 
 
-class RegressionModel(pl.LightningModule):
+class NNModule(pl.LightningModule):
     def __init__(
         self,
         num_numerical_features: int,
@@ -103,59 +103,31 @@ class RegressionModel(pl.LightningModule):
 class NNModel(BaseModel):
     def __init__(self, config: NNConfig) -> None:
         super().__init__(config)
-        self._model: RegressionModel | None = None
+        self._model: NNModule | None = None
         self._categorical_features = list(config.categorical_feature_dims.keys())
 
     def fit(
         self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
     ) -> Self:
-        # setup datasets and dataloaders
-        dataset_tr = TrainingTabularDataset(
-            X=X_tr,
+        self._data_module = MCTSDataModule(
+            X_tr=X_tr,
+            X_va=X_va,
+            y_tr=y_tr,
+            y_va=y_va,
             categorical_features=self._categorical_features,
-            y=y_tr,
-        )
-        self._scaler = dataset_tr.fitted_scaler
-        self._encoders = dataset_tr.fitted_encoders
-
-        dataset_va = EvalTabularDataset(
-            X=X_va,
-            categorical_features=self._categorical_features,
-            scaler=self._scaler,
-            encoders=self._encoders,
-            y=y_va,
-        )
-
-        loader_tr = DataLoader(
-            dataset_tr,
             batch_size=self._params["batch_size"],
-            shuffle=True,
-            num_workers=NUM_WORKERS,
-        )
-        loader_va = DataLoader(
-            dataset_va,
-            batch_size=self._params["batch_size"],
-            shuffle=False,
-            num_workers=NUM_WORKERS,
         )
 
-        # initialize model
-        num_numerical_features = len(X_tr.columns) - len(self._categorical_features)
-        categorical_feature_dims = {
-            feature: len(encoder.classes_)
-            for feature, encoder in self._encoders.items()
-        }
-
-        self._model = RegressionModel(
-            num_numerical_features=num_numerical_features,
-            categorical_feature_dims=categorical_feature_dims,
+        self._model = NNModule(
+            num_numerical_features=X_tr.shape[1] - len(self._categorical_features),
+            categorical_feature_dims=self._params["categorical_feature_dims"],
             embedding_dim=self._params["embedding_dim"],
             hidden_dims=self._params["hidden_dims"],
             dropout_rate=self._params["dropout_rate"],
+            learning_rate=self._params["learning_rate"],
         )
 
-        # training
-        trainer = pl.Trainer(
+        self._trainer = pl.Trainer(
             max_epochs=self._params["max_epochs"],
             callbacks=[
                 pl.callbacks.EarlyStopping(
@@ -163,7 +135,8 @@ class NNModel(BaseModel):
                 )
             ],
         )
-        trainer.fit(self._model, loader_tr, loader_va)
+
+        self._trainer.fit(self._model, self._data_module)
 
         return self
 
@@ -171,23 +144,18 @@ class NNModel(BaseModel):
         if self._model is None:
             raise RuntimeError("Model must be fitted before prediction")
 
-        # setup dataset and dataloader
-        dataset = EvalTabularDataset(
-            X=X,
-            categorical_features=self._categorical_features,
-            scaler=self._scaler,
-            encoders=self._encoders,
-        )
-        loader = DataLoader(
-            dataset, batch_size=self._params["batch_size"], shuffle=False
+        dataset = MCTSDataset(X, self._categorical_features)
+        dataloader = DataLoader(
+            dataset, batch_size=self._params["batch_size"], num_workers=NUM_WORKERS
         )
 
-        # prediction
+        preds = []
         self._model.eval()
-        predictions = []
         with torch.no_grad():
-            for batch in loader:
-                output = self._model(batch["numerical"], batch["categorical"])
-                predictions.append(output.cpu().numpy())
+            for batch in dataloader:
+                numerical = batch["numerical"]
+                categorical = batch["categorical"]
+                pred = self._model(numerical, categorical)
+                preds.append(pred)
 
-        return np.concatenate(predictions)
+        return torch.cat(preds).numpy()

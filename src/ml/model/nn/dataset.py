@@ -2,39 +2,31 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import pytorch_lightning as pl
 import torch
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
+
+NUM_WORKERS = 4  # os.cpu_count()
 
 
-class BaseTabularDataset(Dataset):
+class MCTSDataset(Dataset):
     def __init__(
         self,
         X: pd.DataFrame,
         categorical_features: list[str],
-        scaler: StandardScaler,
-        encoders: dict[str, LabelEncoder],
         y: np.ndarray | None = None,
     ) -> None:
-        # numerical features
-        self._scaler = scaler
-        numeric_features = [col for col in X.columns if col not in categorical_features]
-        scaled = self._scaler.transform(X[numeric_features])
-        self._numerical = torch.tensor(scaled, dtype=torch.float32)
-
-        # categorical features
-        self._categorical = {}
-        self._encoders = encoders
-        for feature in categorical_features:
-            known_categories = set(self._encoders[feature].classes_)
-            X_processed = X[feature].map(
-                lambda x: x if x in known_categories else "<UNK>"
-            )
-            encoded = self._encoders[feature].transform(X_processed)
-            self._categorical[feature] = torch.tensor(encoded, dtype=torch.long)
-
-        # target
-        self._target = torch.tensor(y, dtype=torch.float32) if y is not None else None
+        numerical_features = [
+            col for col in X.columns if col not in categorical_features
+        ]
+        self._numerical = torch.tensor(
+            X[numerical_features].values, dtype=torch.float32
+        )
+        self._categorical = {
+            col: torch.tensor(X[col].values, dtype=torch.int64)
+            for col in categorical_features
+        }
+        self._target = y
 
     def __len__(self) -> int:
         return len(self._numerical)
@@ -50,40 +42,35 @@ class BaseTabularDataset(Dataset):
         return item
 
 
-class TrainingTabularDataset(BaseTabularDataset):
+class MCTSDataModule(pl.LightningDataModule):
     def __init__(
         self,
-        X: pd.DataFrame,
+        X_tr: pd.DataFrame,
+        X_va: pd.DataFrame,
+        y_tr: np.ndarray,
+        y_va: np.ndarray,
         categorical_features: list[str],
-        y: np.ndarray | None = None,
+        batch_size: int = 64,
     ) -> None:
-        numeric_features = [col for col in X.columns if col not in categorical_features]
-        scaler = StandardScaler().fit(X[numeric_features])
+        super().__init__()
+        self._train_dataset = MCTSDataset(X_tr, categorical_features, y_tr)
+        self._val_dataset = MCTSDataset(X_va, categorical_features, y_va)
+        self._batch_size = batch_size
 
-        encoders = {}
-        for feature in categorical_features:
-            unique_values = X[feature].unique().tolist()
-            unique_values.append("<UNK>")
-            encoders[feature] = LabelEncoder().fit(unique_values)
+    def train_dataloader(self) -> DataLoader:
+        return DataLoader(
+            self._train_dataset,
+            batch_size=self._batch_size,
+            shuffle=True,
+            num_workers=NUM_WORKERS,
+            pin_memory=True,
+        )
 
-        super().__init__(X, categorical_features, scaler, encoders, y)
-
-    @property
-    def fitted_scaler(self) -> StandardScaler:
-        return self._scaler
-
-    @property
-    def fitted_encoders(self) -> dict[str, LabelEncoder]:
-        return self._encoders
-
-
-class EvalTabularDataset(BaseTabularDataset):
-    def __init__(
-        self,
-        X: pd.DataFrame,
-        categorical_features: list[str],
-        scaler: StandardScaler,
-        encoders: dict[str, LabelEncoder],
-        y: np.ndarray | None = None,
-    ) -> None:
-        super().__init__(X, categorical_features, scaler, encoders, y)
+    def val_dataloader(self) -> DataLoader:
+        return DataLoader(
+            self._val_dataset,
+            batch_size=self._batch_size,
+            shuffle=False,
+            num_workers=NUM_WORKERS,
+            pin_memory=True,
+        )
