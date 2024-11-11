@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.preprocessing import OrdinalEncoder, StandardScaler
+from sklearn.preprocessing import OrdinalEncoder, QuantileTransformer
 from typing_extensions import Self
 
 
@@ -11,16 +11,19 @@ class Preprocessor:
     - Encode categorical features with LabelEncoder
     """
 
-    def __init__(self) -> None:
-        self._scaler: StandardScaler | None = None
+    def __init__(self, random_state: int = 0) -> None:
+        self._random_state = random_state
+        self._scaler: QuantileTransformer | None = None
         self._label_encoders: dict[str, OrdinalEncoder] | None = None
 
     def fit(self, X: pd.DataFrame, categorical_feature_dims: dict[str, int]) -> Self:
         self._numerical_features = [
             col for col in X.columns if col not in categorical_feature_dims
         ]
+        self._scaler = QuantileTransformer(
+            output_distribution="normal", random_state=self._random_state
+        ).fit(X[self._numerical_features])
 
-        self._scaler = StandardScaler().fit(X[self._numerical_features])
         self._label_encoders = {}
         for feature, dim in categorical_feature_dims.items():
             encoder = OrdinalEncoder(
