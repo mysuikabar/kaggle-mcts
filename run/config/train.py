@@ -37,6 +37,7 @@ hydra_config = {
         "subdir": "${hydra.job.override_dirname}",
     },
     "job": {"chdir": True},
+    "verbose": True,
 }
 
 
