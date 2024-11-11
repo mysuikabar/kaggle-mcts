@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   dev:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     volumes:
@@ -15,5 +15,6 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
+    shm_size: '8gb'
     tty: true
