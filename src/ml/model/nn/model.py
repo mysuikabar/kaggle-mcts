@@ -11,6 +11,7 @@ from typing_extensions import Self
 
 from ..base import BaseConfig, BaseModel
 from .dataset import MCTSDataModule, MCTSDataset
+from .processor import Preprocessor
 
 NUM_WORKERS = 4  # os.cpu_count()
 
@@ -104,11 +105,16 @@ class NNModel(BaseModel):
     def __init__(self, config: NNConfig) -> None:
         super().__init__(config)
         self._model: NNModule | None = None
+        self._processor = Preprocessor()
+        self._categorical_feature_dims = config.categorical_feature_dims
         self._categorical_features = list(config.categorical_feature_dims.keys())
 
     def fit(
         self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
     ) -> Self:
+        X_tr = self._processor.fit_transform(X_tr, self._categorical_feature_dims)
+        X_va = self._processor.transform(X_va)
+
         self._data_module = MCTSDataModule(
             X_tr=X_tr,
             X_va=X_va,
@@ -144,6 +150,7 @@ class NNModel(BaseModel):
         if self._model is None:
             raise RuntimeError("Model must be fitted before prediction")
 
+        X = self._processor.transform(X)
         dataset = MCTSDataset(X, self._categorical_features)
         dataloader = DataLoader(
             dataset, batch_size=self._params["batch_size"], num_workers=NUM_WORKERS
