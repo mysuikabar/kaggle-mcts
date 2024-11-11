@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -143,10 +144,7 @@ class NNModel(BaseModel):
             monitor="val_loss", patience=self._params["early_stopping_patience"]
         )
         checkpoint_callback = ModelCheckpoint(
-            monitor="val_loss",
-            save_top_k=1,
-            mode="min",
-            filename="best-model-{epoch:02d}-{val_loss:.4f}",
+            monitor="val_loss", save_top_k=1, mode="min"
         )
         self._trainer = pl.Trainer(
             max_epochs=self._params["max_epochs"],
@@ -163,7 +161,7 @@ class NNModel(BaseModel):
             hidden_dims=self._params["hidden_dims"],
             dropout_rate=self._params["dropout_rate"],
             learning_rate=self._params["learning_rate"],
-        )
+        ).to("cpu")
 
         return self
 
@@ -184,6 +182,13 @@ class NNModel(BaseModel):
                 numerical = batch["numerical"]
                 categorical = batch["categorical"]
                 pred = self._model(numerical, categorical)
-                preds.append(pred)
+                preds.append(pred.cpu())
 
         return torch.cat(preds).numpy()
+
+    def save(self, filepath: str | Path) -> None:
+        if self._model is None:
+            raise RuntimeError("Model must be fitted before saving")
+        torch.save(self._model.state_dict(), filepath)
+
+    # TODO: implement load method
