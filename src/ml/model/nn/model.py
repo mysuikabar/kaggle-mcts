@@ -43,7 +43,9 @@ class NNModule(pl.LightningModule):
         # embedding layers
         self._embedding_layers = nn.ModuleDict(
             {
-                feature: nn.Embedding(num_embeddings, embedding_dim)
+                feature: nn.Embedding(
+                    num_embeddings + 1, embedding_dim
+                )  # +1 for unknown values
                 for feature, num_embeddings in categorical_feature_dims.items()
             }
         )
@@ -140,6 +142,7 @@ class NNModel(BaseModel):
                     monitor="val_loss", patience=self._params["early_stopping_patience"]
                 )
             ],
+            accelerator="cpu",
         )
 
         self._trainer.fit(self._model, datamodule=self._data_module)

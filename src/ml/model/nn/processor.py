@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 from typing_extensions import Self
 
 
@@ -13,20 +13,22 @@ class Preprocessor:
 
     def __init__(self) -> None:
         self._scaler: StandardScaler | None = None
-        self._label_encoders: dict[str, LabelEncoder] | None = None
+        self._label_encoders: dict[str, OrdinalEncoder] | None = None
 
     def fit(self, X: pd.DataFrame, categorical_feature_dims: dict[str, int]) -> Self:
-        self._categorical_features = list(categorical_feature_dims.keys())
         self._numerical_features = [
-            col for col in X.columns if col not in self._categorical_features
+            col for col in X.columns if col not in categorical_feature_dims
         ]
 
         self._scaler = StandardScaler().fit(X[self._numerical_features])
         self._label_encoders = {}
-        for feature in self._categorical_features:
-            unique_values = X[feature].unique().tolist()
-            unique_values.append("<UNK>")
-            self._label_encoders[feature] = LabelEncoder().fit(unique_values)
+        for feature, dim in categorical_feature_dims.items():
+            encoder = OrdinalEncoder(
+                handle_unknown="use_encoded_value", unknown_value=dim
+            )  # encode unseen values as a largest integer
+            self._label_encoders[feature] = encoder.fit(
+                X[feature].values.reshape(-1, 1)
+            )
 
         return self
 
@@ -40,11 +42,7 @@ class Preprocessor:
         )
 
         for feature, encoder in self._label_encoders.items():  # type: ignore
-            known_values = set(encoder.classes_)
-            X_copy[feature] = X_copy[feature].apply(
-                lambda x: x if x in known_values else "<UNK>"
-            )
-            X_copy[feature] = encoder.transform(X_copy[feature])
+            X_copy[feature] = encoder.transform(X_copy[feature].values.reshape(-1, 1))
 
         return X_copy
 

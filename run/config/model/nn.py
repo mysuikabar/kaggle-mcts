@@ -8,7 +8,7 @@ nn_config = NNConfig(
         "p2_selection": 4,
         "p2_playout": 3,
         "p2_bounds": 2,
-        "LudRules_players": 10,
+        "LudRules_players": 9,
     },
     embedding_dim=4,
     hidden_dims=[512, 256, 128, 64],
