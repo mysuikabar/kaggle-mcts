@@ -26,7 +26,7 @@ class MCTSDataset(Dataset):
             col: torch.tensor(X[col].values, dtype=torch.int64)
             for col in categorical_features
         }
-        self._target = y
+        self._target = torch.tensor(y, dtype=torch.float32) if y is not None else None
 
     def __len__(self) -> int:
         return len(self._numerical)

@@ -142,7 +142,7 @@ class NNModel(BaseModel):
             ],
         )
 
-        self._trainer.fit(self._model, self._data_module)
+        self._trainer.fit(self._model, datamodule=self._data_module)
 
         return self
 

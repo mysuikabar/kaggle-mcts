@@ -24,7 +24,7 @@ class Preprocessor:
         self._scaler = StandardScaler().fit(X[self._numerical_features])
         self._label_encoders = {}
         for feature in self._categorical_features:
-            unique_values = X[feature].unique()
+            unique_values = X[feature].unique().tolist()
             unique_values.append("<UNK>")
             self._label_encoders[feature] = LabelEncoder().fit(unique_values)
 
@@ -32,6 +32,9 @@ class Preprocessor:
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         X_copy = X.copy()
+        X_copy[self._numerical_features] = X_copy[self._numerical_features].astype(
+            float
+        )
         X_copy.loc[:, self._numerical_features] = self._scaler.transform(  # type: ignore
             X_copy[self._numerical_features]
         )
