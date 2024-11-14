@@ -8,6 +8,8 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from torch.optim import Adam  # TODO: use AdamW
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from typing_extensions import Self
 
@@ -39,6 +41,7 @@ class NNModule(pl.LightningModule):
         hidden_dims: list[int],
         dropout_rate: float = 0.1,
         learning_rate: float = 0.001,
+        lr_scheduler_patience: int = 5,
     ) -> None:
         super().__init__()
 
@@ -76,7 +79,9 @@ class NNModule(pl.LightningModule):
         # loss function
         self._criterion = nn.MSELoss()
 
+        # hyperparameters
         self._learning_rate = learning_rate
+        self._lr_scheduler_patience = lr_scheduler_patience
 
     def forward(
         self, numerical: torch.Tensor, categorical: dict[str, torch.Tensor]
@@ -101,8 +106,16 @@ class NNModule(pl.LightningModule):
         self.log("val_loss", loss, prog_bar=True)
         return loss
 
-    def configure_optimizers(self) -> torch.optim.Optimizer:
-        return torch.optim.Adam(self.parameters(), lr=self._learning_rate)
+    def configure_optimizers(self) -> dict[str, Any]:  # type: ignore
+        optimizer = Adam(self.parameters(), lr=self._learning_rate)
+        scheduler = ReduceLROnPlateau(
+            optimizer, patience=self._lr_scheduler_patience, verbose=True
+        )
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": scheduler,
+            "monitor": "val_loss",
+        }
 
 
 class NNModel(BaseModel):
