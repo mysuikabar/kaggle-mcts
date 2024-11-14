@@ -92,13 +92,13 @@ class NNModule(pl.LightningModule):
     def training_step(self, batch: dict[str, Any], batch_idx: int) -> torch.Tensor:
         output = self(batch["numerical"], batch["categorical"])
         loss = self._criterion(output, batch["target"])
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch: dict[str, Any], batch_idx: int) -> torch.Tensor:
         output = self(batch["numerical"], batch["categorical"])
         loss = self._criterion(output, batch["target"])
-        self.log("val_loss", loss)
+        self.log("val_loss", loss, prog_bar=True)
         return loss
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
