@@ -48,7 +48,8 @@ class Config:
     seed: int = 42
     target: str = "utility_agent1"
     data_path: Path = REPO_ROOT / "data/raw/train.csv"
-    preprocess_dir: Path = REPO_ROOT / "outputs/preprocess/mcts-02-preprocess"
+    fold_assignment_path: Path = REPO_ROOT / "outputs/preprocess/mcts-02-preprocess/fold_assignments.csv"
+    tfidf_dir: Path | None = REPO_ROOT / "outputs/preprocess/mcts-02-preprocess"  # tfidf
     importance_dir: Path | None = REPO_ROOT / "outputs/mcts-11-cbt"  #  feature selection
     num_features: int = 500
     feature: FeatureConfig = FeatureConfig()

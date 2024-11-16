@@ -15,7 +15,6 @@ from metric import calculate_metrics, log_metrics
 from model.factory import ModelFactory
 from process.feature import FeatureProcessor, FeatureStore
 from process.pipeline import PreprocessPipeline
-from process.utils import filter_features
 from utils.seed import seed_everything
 
 logger = getLogger(__name__)
@@ -30,11 +29,19 @@ def load_feature_processor(use_features: list[str], feature_store_dir: Path | No
     return FeatureProcessor(features, feature_store)
 
 
-def load_process_pipeline(tfidf_dir: Path, use_cols: list[str] | None = None) -> PreprocessPipeline:
+def load_process_pipeline(tfidf_dir: Path | None = None, use_columns: list[str] | None = None) -> PreprocessPipeline:
+    if tfidf_dir is None:
+        return PreprocessPipeline(use_columns=use_columns)
+
     col2tfidf = {}
     for path in tfidf_dir.iterdir():
         col2tfidf[path.stem] = pickle.load(open(path, "rb"))
-    return PreprocessPipeline(col2tfidf, use_cols)
+    return PreprocessPipeline(col2tfidf=col2tfidf, use_columns=use_columns)
+
+
+def filter_features_by_importance(importance: pd.DataFrame, num_features: int) -> list[str]:
+    filtered_importance = importance.sort_values("importance", ascending=False).head(num_features)
+    return filtered_importance["feature"].tolist()
 
 
 @hydra.main(version_base=None, config_name="config")
@@ -55,7 +62,7 @@ def main(config: Config) -> None:
     # cross validation
     model_factory = ModelFactory()
     oof = np.zeros(len(y))
-    fold_assignments = pd.read_csv(config.preprocess_dir / "fold_assignments.csv", index_col=0)["fold"]
+    fold_assignments = pd.read_csv(config.fold_assignment_path, index_col=0)["fold"]
 
     for fold in sorted(fold_assignments.unique()):
         logger.info(f"Training fold {fold}")
@@ -72,9 +79,10 @@ def main(config: Config) -> None:
         features = None
         if config.importance_dir is not None:
             importance = pd.read_csv(config.importance_dir / f"fold_{fold}/importance.csv")
-            features = filter_features(importance, config.num_features)
+            features = filter_features_by_importance(importance, config.num_features)
+        tfidf_dir = config.tfidf_dir / f"fold_{fold}" if config.tfidf_dir else None
 
-        pipeline = load_process_pipeline(config.preprocess_dir / f"fold_{fold}", use_cols=features)
+        pipeline = load_process_pipeline(tfidf_dir=tfidf_dir, use_columns=features)
         X_tr, X_va = pipeline.fit_transform(X_tr), pipeline.transform(X_va)
         pipeline.save(output_dir / "pipeline.pickle")
         X_tr.columns.to_series().to_csv(output_dir / "features.csv", index=False)
