@@ -37,6 +37,7 @@ class ColumnDropper(TransformerMixin, BaseEstimator):
 
 class Tfidf(TransformerMixin, BaseEstimator):
     def __init__(self, max_features: int) -> None:
+        self.max_features = max_features
         self._vectorizer = TfidfVectorizer(max_features=max_features)
 
     @staticmethod
