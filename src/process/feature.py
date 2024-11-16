@@ -1,3 +1,4 @@
+import pickle
 from collections import UserDict
 from logging import getLogger
 from pathlib import Path
@@ -115,3 +116,20 @@ class FeatureProcessor(TransformerMixin, BaseEstimator):
         Disable the feature store.
         """
         self._feature_store = None
+
+    def save(self, filepath: str | Path) -> None:
+        with open(filepath, "wb") as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def load(cls, filepath: str | Path) -> Self:
+        with open(filepath, "rb") as file:
+            obj = pickle.load(file)
+
+        if not isinstance(obj, cls):
+            raise TypeError(
+                f"Loaded object type does not match expected type. "
+                f"Expected: {cls.__name__}, Actual: {type(obj).__name__}"
+            )
+
+        return obj
