@@ -4,7 +4,7 @@ from typing import Any
 
 from consts import REPO_ROOT
 
-from .model_params import (  # noqa: F401
+from .model import (  # noqa: F401
     CatBoostConfig,
     LightGBMConfig,
     NNConfig,
@@ -17,7 +17,7 @@ class FeatureConfig:
     use_features: list[str] = field(
         default_factory=lambda: ["agent_property", "lud_rules", "baseline_features"]
     )
-    feature_store_dir: Path | None = None  # REPO_ROOT / "data/feature_store"
+    store_dir: Path | None = None  # REPO_ROOT / "data/feature_store"
 
 
 @dataclass
