@@ -1,13 +1,15 @@
 import re
 import string
+from logging import getLogger
 
 import pandas as pd
-from joblib import Parallel, delayed
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.feature_extraction.text import TfidfVectorizer
 from typing_extensions import Self
 
-from .base import BaseFittableProcessor
 from .consts import STOP_WORDS
+
+logger = getLogger(__name__)
 
 
 def _preprocess_text(text: str) -> str:
@@ -29,53 +31,31 @@ def _preprocess_text(text: str) -> str:
     return text
 
 
-class TfidfProcessor(BaseFittableProcessor):
+class Tfidf(TransformerMixin, BaseEstimator):
     """
     tf-idf processor for text columns
     """
 
     def __init__(self, max_features: int) -> None:
-        self._processor = TfidfVectorizer(max_features=max_features)
+        self._vectorizer = TfidfVectorizer(max_features=max_features)
 
-    def fit(self, sr: pd.Series) -> Self:
-        sr = sr.apply(_preprocess_text)
-        self._processor.fit(sr)
+    def fit(self, X: pd.Series, y: None = None) -> Self:
+        X = X.apply(_preprocess_text)
+
+        logger.info(f"Fitting tf-idf vectorizer for {X.name}")
+        self._vectorizer.fit(X)
+        logger.info(f"Fitting tf-idf vectorizer done for {X.name}")
+
         return self
 
-    def transform(self, sr: pd.Series) -> pd.DataFrame:
-        sr = sr.apply(_preprocess_text)
-        features = self._processor.transform(sr).toarray()
-        columns = self._processor.get_feature_names_out().tolist()
-        return pd.DataFrame(features, index=sr.index, columns=columns)
+    def transform(self, X: pd.Series) -> pd.DataFrame:
+        X = X.apply(_preprocess_text)
 
-    def fit_transform(self, sr: pd.Series) -> pd.DataFrame:
-        return self.fit(sr).transform(sr)
+        logger.info(f"Transforming text to tf-idf features for {X.name}")
+        features = self._vectorizer.transform(X).toarray()
+        logger.info(f"Transforming text to tf-idf features done for {X.name}")
 
+        columns = self._vectorizer.get_feature_names_out().tolist()
+        columns = [f"tfidf_{X.name}_{col}" for col in columns]
 
-def _fit_tfidf(sr: pd.Series, max_features: int) -> TfidfProcessor:
-    processor = TfidfProcessor(max_features)
-    return processor.fit(sr)
-
-
-def parallel_fit_tfidf(
-    df: pd.DataFrame, text_cols: list[str], max_features: int
-) -> dict[str, TfidfProcessor]:
-    results = Parallel(n_jobs=-1)(
-        delayed(_fit_tfidf)(df[feature], max_features) for feature in text_cols
-    )
-    return dict(zip(text_cols, results))
-
-
-def parallel_transform_tfidf(
-    df: pd.DataFrame, processors: dict[str, TfidfProcessor]
-) -> pd.DataFrame:
-    results = Parallel(n_jobs=-1)(
-        delayed(processor.transform)(df[feature])
-        for feature, processor in processors.items()
-    )
-
-    # カラム名を被らないように feature_col　にしてconcat
-    for feature, result in zip(processors.keys(), results):
-        result.columns = [f"{feature}_{col}" for col in result.columns]
-
-    return pd.concat(results, axis=1)
+        return pd.DataFrame(features, index=X.index, columns=columns)

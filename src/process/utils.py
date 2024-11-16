@@ -1,23 +1,29 @@
 import pandas as pd
+from sklearn.base import BaseEstimator, OneToOneFeatureMixin, TransformerMixin
 from typing_extensions import Self
 
 
-class CategoricalConverter:
-    def __init__(self) -> None:
-        self._cat_mapping: dict[str, pd.CategoricalDtype] | None = None
-
-    def fit(self, df: pd.DataFrame) -> Self:
+class CategoricalConverter(OneToOneFeatureMixin, BaseEstimator):
+    def fit(self, X: pd.DataFrame, y: None = None) -> Self:
         self._cat_mapping = {
             feature: "category"
-            for feature in df.columns[df.dtypes == object]  # noqa: E721
+            for feature in X.columns[X.dtypes == object]  # noqa: E721
         }
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        return df.astype(self._cat_mapping)
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        return X.astype(self._cat_mapping)
 
-    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        return self.fit(df).transform(df)
+
+class ColumnDropper(TransformerMixin, BaseEstimator):
+    def __init__(self, columns: list[str]) -> None:
+        self._columns = columns
+
+    def fit(self, X: pd.DataFrame, y: None = None) -> Self:
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        return X.drop(columns=self._columns, errors="ignore")
 
 
 def filter_features(importance: pd.DataFrame, num_features: int) -> list[str]:

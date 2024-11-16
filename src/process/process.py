@@ -1,21 +1,40 @@
-from logging import getLogger
+import pickle
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from typing_extensions import Self
 
-from .base import BaseFittableProcessor
 from .consts import USELESS_COLUMNS
-from .text import TfidfProcessor, parallel_transform_tfidf
-from .utils import CategoricalConverter
-
-logger = getLogger(__name__)
+from .text import Tfidf
+from .utils import CategoricalConverter, ColumnDropper
 
 
-class PreProcessor(BaseFittableProcessor):
-    def __init__(self, col2tfidf: dict[str, TfidfProcessor]) -> None:
-        self._cat_converter = CategoricalConverter()
-        self._col2tfidf = col2tfidf
-        self._drop_columns = [
+class PreprocessPipeline(TransformerMixin, BaseEstimator):
+    def __init__(self, col2tfidf: dict[str, Tfidf] | None = None) -> None:
+        transformers = []
+
+        # tfidf
+        if col2tfidf:
+            transformers.append(
+                (
+                    "tfidf",
+                    ColumnTransformer(
+                        [
+                            (f"tfidf_{col}", tfidf, col)
+                            for col, tfidf in col2tfidf.items()
+                        ],
+                        remainder="passthrough",
+                        n_jobs=len(col2tfidf),
+                    ),
+                )
+            )
+
+        # drop columns
+        drop_columns = [
             "Id",
             "GameRulesetName",
             "agent1",
@@ -23,38 +42,43 @@ class PreProcessor(BaseFittableProcessor):
             "EnglishRules",
             "LudRules",
             "LudRules_game",
+            "LudRules_equipment",
+            "LudRules_rules",
             "num_wins_agent1",
             "num_draws_agent1",
             "num_losses_agent1",
             "utility_agent1",
         ] + USELESS_COLUMNS
+        transformers.append(("column_dropper", ColumnDropper(columns=drop_columns)))
 
-    def _transform(self, df: pd.DataFrame, fit: bool) -> pd.DataFrame:
-        df_result = df.copy()
+        # categorical converter
+        transformers.append(("categorical_converter", CategoricalConverter()))
 
-        # tfidf
-        logger.info("Transforming tf-idf")
-        df_tfidf = parallel_transform_tfidf(df, self._col2tfidf)
-        df_result = pd.concat([df_result, df_tfidf], axis=1)
-        df_result = df_result.drop(columns=self._col2tfidf.keys())
+        self._pipeline = Pipeline(transformers)
 
-        # drop columns
-        df_result = df_result.drop(columns=self._drop_columns, errors="ignore")
+    def fit(self, X: pd.DataFrame, y: None = None) -> Self:
+        self._pipeline.fit(X)
+        return self
 
-        # convert categorical columns
-        logger.info("Converting categorical columns")
-        if fit:
-            df_result = self._cat_converter.fit_transform(df_result)
-        else:
-            df_result = self._cat_converter.transform(df_result)
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        return self._pipeline.transform(X)
 
-        return df_result
+    def save(self, filepath: str | Path) -> None:
+        with open(filepath, "wb") as file:
+            pickle.dump(self, file)
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        return self._transform(df, fit=False)
+    @classmethod
+    def load(cls, filepath: str | Path) -> Self:
+        with open(filepath, "rb") as file:
+            obj = pickle.load(file)
 
-    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        return self._transform(df, fit=True)
+        if not isinstance(obj, cls):
+            raise TypeError(
+                f"Loaded object type does not match expected type. "
+                f"Expected: {cls.__name__}, Actual: {type(obj).__name__}"
+            )
+
+        return obj
 
 
 def postprocess(pred: np.ndarray) -> np.ndarray:
