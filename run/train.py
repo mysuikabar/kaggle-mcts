@@ -10,7 +10,7 @@ from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
 
 from features import feature_expressions_master
-from metric import calculate_metrics
+from metric import calculate_metrics, log_metrics
 from ml.model.factory import ModelFactory
 from process.feature import FeatureProcessor
 from process.process import PreProcessor
@@ -95,8 +95,7 @@ def main(config: Config) -> None:
 
     # evaluate
     metrics = calculate_metrics(y, oof, fold_assignments)
-    for metric, score in metrics.items():
-        logger.info(f"{metric}: {score}")
+    log_metrics(metrics, logger)
 
     # log to wandb
     if config.wandb.enable:

@@ -1,3 +1,5 @@
+from logging import Logger
+
 import numpy as np
 from sklearn.metrics import mean_squared_error
 
@@ -23,3 +25,8 @@ def calculate_metrics(
     }
 
     return metrics
+
+
+def log_metrics(metrics: dict[str, float], logger: Logger) -> None:
+    for metric, score in metrics.items():
+        logger.info(f"{metric}: {score}")
