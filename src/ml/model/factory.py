@@ -1,27 +1,27 @@
 from pathlib import Path
+from typing import Any, Literal
 
-from .base import BaseConfig, BaseModel
+from .base import BaseModel
 from .gbdt import CatBoostModel, LightGBMModel, XGBoostModel
 from .nn import NNModel
 
 
 class ModelFactory:
-    def __init__(self, model_type: str, config: BaseConfig) -> None:
-        self._config = config
-
+    @staticmethod
+    def build(
+        model_type: Literal["lightgbm", "xgboost", "catboost", "nn"],
+        **params: Any,
+    ) -> BaseModel:
         if model_type == "lightgbm":
-            self._model_cls = LightGBMModel
+            return LightGBMModel(**params)
         elif model_type == "xgboost":
-            self._model_cls = XGBoostModel  # type: ignore
+            return XGBoostModel(**params)
         elif model_type == "catboost":
-            self._model_cls = CatBoostModel  # type: ignore
+            return CatBoostModel(**params)
         elif model_type == "nn":
-            self._model_cls = NNModel  # type: ignore
+            return NNModel(**params)
         else:
             raise ValueError(f"Unknown model type: {model_type}")
-
-    def build(self) -> BaseModel:
-        return self._model_cls(self._config)  # type: ignore
 
     @staticmethod
     def load(file_path: str | Path) -> BaseModel:

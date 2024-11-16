@@ -51,7 +51,7 @@ def main(config: Config) -> None:
     logger.info(f"Feature added data shape: {X.shape}")
 
     # cross validation
-    model_factory = ModelFactory(config.model.type, config.model.config)
+    model_factory = ModelFactory()
     oof = np.zeros(len(y))
     fold_assignments = pd.read_csv(
         config.preprocess_dir / "fold_assignments.csv", index_col=0
@@ -81,7 +81,7 @@ def main(config: Config) -> None:
         logger.info(f"Processed data shape: {X_tr.shape}")
 
         # train & predict
-        model = model_factory.build()
+        model = model_factory.build(config.model.type, **config.model.config)
         model.fit(X_tr, y_tr, X_va, y_va)
         oof[idx_va] = model.predict(X_va)
 

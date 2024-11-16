@@ -1,3 +1,3 @@
-from .model import NNConfig, NNModel
+from .model import NNModel
 
-__all__ = ["NNConfig", "NNModel"]
+__all__ = ["NNModel"]

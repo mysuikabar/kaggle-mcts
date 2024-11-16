@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -13,23 +12,11 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from typing_extensions import Self
 
-from ..base import BaseConfig, BaseModel
+from ..base import BaseModel
 from .dataset import MCTSDataModule, MCTSDataset
 from .processor import Preprocessor
 
 NUM_WORKERS = 0  # os.cpu_count()
-
-
-@dataclass
-class NNConfig(BaseConfig):
-    categorical_feature_dims: dict[str, int]
-    embedding_dim: int
-    hidden_dims: list[int]
-    dropout_rate: float = 0.1
-    learning_rate: float = 0.001
-    max_epochs: int = 3000
-    early_stopping_patience: int = 10
-    batch_size: int = 64
 
 
 class NNModule(pl.LightningModule):
@@ -39,9 +26,9 @@ class NNModule(pl.LightningModule):
         categorical_feature_dims: dict[str, int],
         embedding_dim: int,
         hidden_dims: list[int],
-        dropout_rate: float = 0.1,
-        learning_rate: float = 0.001,
-        lr_scheduler_patience: int = 5,
+        dropout_rate: float,
+        learning_rate: float,
+        scheduler_patience: int,
     ) -> None:
         super().__init__()
 
@@ -81,7 +68,7 @@ class NNModule(pl.LightningModule):
 
         # hyperparameters
         self._learning_rate = learning_rate
-        self._lr_scheduler_patience = lr_scheduler_patience
+        self._scheduler_patience = scheduler_patience
 
     def forward(
         self, numerical: torch.Tensor, categorical: dict[str, torch.Tensor]
@@ -109,7 +96,7 @@ class NNModule(pl.LightningModule):
     def configure_optimizers(self) -> dict[str, Any]:  # type: ignore
         optimizer = Adam(self.parameters(), lr=self._learning_rate)
         scheduler = ReduceLROnPlateau(
-            optimizer, patience=self._lr_scheduler_patience, verbose=True
+            optimizer, patience=self._scheduler_patience, verbose=True
         )
         return {
             "optimizer": optimizer,
@@ -119,12 +106,30 @@ class NNModule(pl.LightningModule):
 
 
 class NNModel(BaseModel):
-    def __init__(self, config: NNConfig) -> None:
-        super().__init__(config)
+    def __init__(
+        self,
+        categorical_feature_dims: dict[str, int],
+        embedding_dim: int,
+        hidden_dims: list[int],
+        dropout_rate: float,
+        learning_rate: float,
+        scheduler_patience: int,
+        max_epochs: int,
+        early_stopping_patience: int,
+        batch_size: int,
+    ) -> None:
         self._model: NNModule | None = None
         self._processor = Preprocessor()
-        self._categorical_feature_dims = config.categorical_feature_dims
-        self._categorical_features = list(config.categorical_feature_dims.keys())
+        self._categorical_feature_dims = categorical_feature_dims.copy()
+        self._categorical_features = list(categorical_feature_dims.keys())
+        self._embedding_dim = embedding_dim
+        self._hidden_dims = hidden_dims
+        self._dropout_rate = dropout_rate
+        self._learning_rate = learning_rate
+        self._scheduler_patience = scheduler_patience
+        self._max_epochs = max_epochs
+        self._early_stopping_patience = early_stopping_patience
+        self._batch_size = batch_size
 
     def fit(
         self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
@@ -139,28 +144,29 @@ class NNModel(BaseModel):
             y_tr=y_tr,
             y_va=y_va,
             categorical_features=self._categorical_features,
-            batch_size=self._params["batch_size"],
+            batch_size=self._batch_size,
         )
 
         # model
         self._model = NNModule(
             num_numerical_features=X_tr.shape[1] - len(self._categorical_features),
-            categorical_feature_dims=self._params["categorical_feature_dims"],
-            embedding_dim=self._params["embedding_dim"],
-            hidden_dims=self._params["hidden_dims"],
-            dropout_rate=self._params["dropout_rate"],
-            learning_rate=self._params["learning_rate"],
+            categorical_feature_dims=self._categorical_feature_dims,
+            embedding_dim=self._embedding_dim,
+            hidden_dims=self._hidden_dims,
+            dropout_rate=self._dropout_rate,
+            learning_rate=self._learning_rate,
+            scheduler_patience=self._scheduler_patience,
         )
 
         # training
         early_stop_callback = EarlyStopping(
-            monitor="val_loss", patience=self._params["early_stopping_patience"]
+            monitor="val_loss", patience=self._early_stopping_patience
         )
         checkpoint_callback = ModelCheckpoint(
             monitor="val_loss", save_top_k=1, mode="min"
         )
         self._trainer = pl.Trainer(
-            max_epochs=self._params["max_epochs"],
+            max_epochs=self._max_epochs,
             callbacks=[early_stop_callback, checkpoint_callback],
         )
         self._trainer.fit(self._model, datamodule=self._data_module)
@@ -169,11 +175,12 @@ class NNModel(BaseModel):
         self._model = NNModule.load_from_checkpoint(
             checkpoint_callback.best_model_path,
             num_numerical_features=X_tr.shape[1] - len(self._categorical_features),
-            categorical_feature_dims=self._params["categorical_feature_dims"],
-            embedding_dim=self._params["embedding_dim"],
-            hidden_dims=self._params["hidden_dims"],
-            dropout_rate=self._params["dropout_rate"],
-            learning_rate=self._params["learning_rate"],
+            categorical_feature_dims=self._categorical_feature_dims,
+            embedding_dim=self._embedding_dim,
+            hidden_dims=self._hidden_dims,
+            dropout_rate=self._dropout_rate,
+            learning_rate=self._learning_rate,
+            scheduler_patience=self._scheduler_patience,
         ).to("cpu")
 
         return self
@@ -185,7 +192,7 @@ class NNModel(BaseModel):
         X = self._processor.transform(X)
         dataset = MCTSDataset(X, self._categorical_features)
         dataloader = DataLoader(
-            dataset, batch_size=self._params["batch_size"], num_workers=NUM_WORKERS
+            dataset, batch_size=self._batch_size, num_workers=NUM_WORKERS
         )
 
         preds = []
@@ -204,4 +211,5 @@ class NNModel(BaseModel):
             raise RuntimeError("Model must be fitted before saving")
         torch.save(self._model.state_dict(), filepath)
 
-    # TODO: implement load method
+    def load(self, filepath: str | Path) -> Self:  # type: ignore
+        raise NotImplementedError  # TODO: implement

@@ -3,9 +3,13 @@ from pathlib import Path
 from typing import Any
 
 from consts import REPO_ROOT
-from ml.model.base import BaseConfig
 
-from .model.gbdt import catboost_config
+from .model_params import (  # noqa: F401
+    CatBoostConfig,
+    LightGBMConfig,
+    NNConfig,
+    XGBoostConfig,
+)
 
 
 @dataclass
@@ -19,7 +23,7 @@ class FeatureConfig:
 @dataclass
 class ModelConfig:
     type: str = "catboost"
-    config: BaseConfig = catboost_config
+    config: CatBoostConfig = CatBoostConfig()
 
 
 @dataclass
