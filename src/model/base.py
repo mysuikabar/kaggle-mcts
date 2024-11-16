@@ -8,9 +8,7 @@ from typing_extensions import Self
 
 class BaseModel(ABC):
     @abstractmethod
-    def fit(
-        self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
-    ) -> Self:
+    def fit(self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray) -> Self:
         pass
 
     @abstractmethod

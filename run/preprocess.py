@@ -25,9 +25,7 @@ hydra_config = {
 
 @dataclass
 class TfidfConfig:
-    text_features: list[str] = field(
-        default_factory=lambda: ["EnglishRules", "LudRules_equipment", "LudRules_rules"]
-    )
+    text_features: list[str] = field(default_factory=lambda: ["EnglishRules", "LudRules_equipment", "LudRules_rules"])
     max_features: int = 600
 
 
@@ -75,10 +73,7 @@ def main(config: Config) -> None:
         # tf-idf
         logger.info("Fitting tf-idf")
         transformer = ColumnTransformer(
-            [
-                (feature, Tfidf(max_features=config.tfidf.max_features), feature)
-                for feature in config.tfidf.text_features
-            ],
+            [(feature, Tfidf(max_features=config.tfidf.max_features), feature) for feature in config.tfidf.text_features],
             remainder="passthrough",
             n_jobs=len(config.tfidf.text_features),
         )
@@ -93,9 +88,7 @@ def main(config: Config) -> None:
         fold_assignments[idx_va] = fold
 
     # save fold assignments
-    pd.Series(fold_assignments, index=X.index, name="fold").to_csv(
-        "fold_assignments.csv"
-    )
+    pd.Series(fold_assignments, index=X.index, name="fold").to_csv("fold_assignments.csv")
 
 
 if __name__ == "__main__":

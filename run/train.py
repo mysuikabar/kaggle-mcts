@@ -24,17 +24,13 @@ cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
 
 
-def load_feature_processor(
-    use_features: list[str], feature_store_dir: Path | None = None
-) -> FeatureProcessor:
+def load_feature_processor(use_features: list[str], feature_store_dir: Path | None = None) -> FeatureProcessor:
     features = feature_expressions_master.filter(use_features)
     feature_store = FeatureStore(feature_store_dir) if feature_store_dir else None
     return FeatureProcessor(features, feature_store)
 
 
-def load_process_pipeline(
-    tfidf_dir: Path, use_cols: list[str] | None = None
-) -> PreprocessPipeline:
+def load_process_pipeline(tfidf_dir: Path, use_cols: list[str] | None = None) -> PreprocessPipeline:
     col2tfidf = {}
     for path in tfidf_dir.iterdir():
         col2tfidf[path.stem] = pickle.load(open(path, "rb"))
@@ -51,9 +47,7 @@ def main(config: Config) -> None:
     logger.info(f"Raw data shape: {df.shape}")
 
     # feature engineering
-    feature_processor = load_feature_processor(
-        config.feature.use_features, config.feature.store_dir
-    )
+    feature_processor = load_feature_processor(config.feature.use_features, config.feature.store_dir)
     X = feature_processor.transform(X)
     feature_processor.save("feature_processor.pickle")
     logger.info(f"Feature added data shape: {X.shape}")
@@ -61,9 +55,7 @@ def main(config: Config) -> None:
     # cross validation
     model_factory = ModelFactory()
     oof = np.zeros(len(y))
-    fold_assignments = pd.read_csv(
-        config.preprocess_dir / "fold_assignments.csv", index_col=0
-    )["fold"]
+    fold_assignments = pd.read_csv(config.preprocess_dir / "fold_assignments.csv", index_col=0)["fold"]
 
     for fold in sorted(fold_assignments.unique()):
         logger.info(f"Training fold {fold}")
@@ -79,14 +71,10 @@ def main(config: Config) -> None:
         # preprocess
         features = None
         if config.importance_dir is not None:
-            importance = pd.read_csv(
-                config.importance_dir / f"fold_{fold}/importance.csv"
-            )
+            importance = pd.read_csv(config.importance_dir / f"fold_{fold}/importance.csv")
             features = filter_features(importance, config.num_features)
 
-        pipeline = load_process_pipeline(
-            config.preprocess_dir / f"fold_{fold}", use_cols=features
-        )
+        pipeline = load_process_pipeline(config.preprocess_dir / f"fold_{fold}", use_cols=features)
         X_tr, X_va = pipeline.fit_transform(X_tr), pipeline.transform(X_va)
         pipeline.save(output_dir / "pipeline.pickle")
         X_tr.columns.to_series().to_csv(output_dir / "features.csv", index=False)

@@ -45,10 +45,7 @@ class PreprocessPipeline(TransformerMixin, BaseEstimator):
                 (
                     "tfidf",
                     ColumnTransformer(
-                        [
-                            (f"tfidf_{col}", tfidf, col)
-                            for col, tfidf in col2tfidf.items()
-                        ],
+                        [(f"tfidf_{col}", tfidf, col) for col, tfidf in col2tfidf.items()],
                         remainder="passthrough",
                         n_jobs=len(col2tfidf),
                     ),
@@ -82,10 +79,7 @@ class PreprocessPipeline(TransformerMixin, BaseEstimator):
             obj = pickle.load(file)
 
         if not isinstance(obj, cls):
-            raise TypeError(
-                f"Loaded object type does not match expected type. "
-                f"Expected: {cls.__name__}, Actual: {type(obj).__name__}"
-            )
+            raise TypeError(f"Loaded object type does not match expected type. " f"Expected: {cls.__name__}, Actual: {type(obj).__name__}")
 
         return obj
 

@@ -19,9 +19,7 @@ class FeatureExpressions(UserDict):
     def __setitem__(self, key: str, value: list[pl.Expr]) -> None:
         if not isinstance(key, str):
             raise TypeError("Key must be a string")
-        if not isinstance(value, list) or not all(
-            isinstance(v, pl.Expr) for v in value
-        ):
+        if not isinstance(value, list) or not all(isinstance(v, pl.Expr) for v in value):
             raise TypeError("Value must be a list of polars expressions")
         self.data[key] = value
 
@@ -32,9 +30,7 @@ class FeatureExpressions(UserDict):
         """
         Filter the dictionary based on given feature names.
         """
-        return FeatureExpressions(
-            {k: self.data[k] for k in feature_names if k in self.data}
-        )
+        return FeatureExpressions({k: self.data[k] for k in feature_names if k in self.data})
 
 
 class FeatureStore:
@@ -90,9 +86,7 @@ class FeatureProcessor(TransformerMixin, BaseEstimator):
         df_result = pl.DataFrame(X)
 
         if self._feature_store is None:
-            expressions = [
-                expr for exprs in self._feature_expressions.values() for expr in exprs
-            ]
+            expressions = [expr for exprs in self._feature_expressions.values() for expr in exprs]
             return df_result.with_columns(expressions).to_pandas()
 
         # when feature store is given
@@ -127,9 +121,6 @@ class FeatureProcessor(TransformerMixin, BaseEstimator):
             obj = pickle.load(file)
 
         if not isinstance(obj, cls):
-            raise TypeError(
-                f"Loaded object type does not match expected type. "
-                f"Expected: {cls.__name__}, Actual: {type(obj).__name__}"
-            )
+            raise TypeError(f"Loaded object type does not match expected type. " f"Expected: {cls.__name__}, Actual: {type(obj).__name__}")
 
         return obj

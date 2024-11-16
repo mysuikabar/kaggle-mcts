@@ -23,10 +23,7 @@ class GBDTBaseModel(BaseModel):
             model = pickle.load(file)
 
         if not isinstance(model, cls):
-            raise TypeError(
-                f"Loaded object type does not match expected type. "
-                f"Expected: {cls.__name__}, Actual: {type(model).__name__}"
-            )
+            raise TypeError(f"Loaded object type does not match expected type. " f"Expected: {cls.__name__}, Actual: {type(model).__name__}")
 
         return model
 
@@ -68,9 +65,7 @@ class LightGBMModel(GBDTBaseModel):
         self._num_boost_round = num_boost_round
         self._early_stopping_rounds = early_stopping_rounds
 
-    def fit(
-        self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
-    ) -> Self:
+    def fit(self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray) -> Self:
         data_tr, data_va = lgb.Dataset(X_tr, y_tr), lgb.Dataset(X_va, y_va)
         valid_sets = [data_tr, data_va]
         valid_names = ["train", "valid"]
@@ -144,9 +139,7 @@ class XGBoostModel(GBDTBaseModel):
         self._num_boost_round = num_boost_round
         self._early_stopping_rounds = early_stopping_rounds
 
-    def fit(
-        self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
-    ) -> Self:
+    def fit(self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray) -> Self:
         dtrain = xgb.DMatrix(X_tr, label=y_tr, enable_categorical=True)
         dvalid = xgb.DMatrix(X_va, label=y_va, enable_categorical=True)
         evals = [(dtrain, "train"), (dvalid, "valid")]
@@ -213,9 +206,7 @@ class CatBoostModel(GBDTBaseModel):
         }
         self._early_stopping_rounds = early_stopping_rounds
 
-    def fit(
-        self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
-    ) -> Self:
+    def fit(self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray) -> Self:
         cat_features = X_tr.select_dtypes(include=["category"]).columns.tolist()
         train_pool = Pool(X_tr, y_tr, cat_features=cat_features)
         eval_pool = Pool(X_va, y_va, cat_features=cat_features)

@@ -4,9 +4,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 
 
-def calculate_metrics(
-    y: np.ndarray, oof: np.ndarray, fold_assignments: np.ndarray
-) -> dict[str, float]:
+def calculate_metrics(y: np.ndarray, oof: np.ndarray, fold_assignments: np.ndarray) -> dict[str, float]:
     assert len(y) == len(oof) == len(fold_assignments)
 
     fold2rmse = {}

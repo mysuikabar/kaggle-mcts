@@ -35,18 +35,14 @@ class NNModule(pl.LightningModule):
         # embedding layers
         self._embedding_layers = nn.ModuleDict(
             {
-                feature: nn.Embedding(
-                    num_embeddings + 1, embedding_dim
-                )  # +1 for unknown values
+                feature: nn.Embedding(num_embeddings + 1, embedding_dim)  # +1 for unknown values
                 for feature, num_embeddings in categorical_feature_dims.items()
             }
         )
 
         # MLP layers
         layers = []
-        input_dim = num_numerical_features + embedding_dim * len(
-            categorical_feature_dims
-        )
+        input_dim = num_numerical_features + embedding_dim * len(categorical_feature_dims)
         prev_dim = input_dim
 
         for hidden_dim in hidden_dims:
@@ -70,9 +66,7 @@ class NNModule(pl.LightningModule):
         self._learning_rate = learning_rate
         self._scheduler_patience = scheduler_patience
 
-    def forward(
-        self, numerical: torch.Tensor, categorical: dict[str, torch.Tensor]
-    ) -> torch.Tensor:
+    def forward(self, numerical: torch.Tensor, categorical: dict[str, torch.Tensor]) -> torch.Tensor:
         embeddings: list[torch.Tensor] = []
         for feature, data in categorical.items():
             embedding = self._embedding_layers[feature](data)
@@ -95,9 +89,7 @@ class NNModule(pl.LightningModule):
 
     def configure_optimizers(self) -> dict[str, Any]:  # type: ignore
         optimizer = Adam(self.parameters(), lr=self._learning_rate)
-        scheduler = ReduceLROnPlateau(
-            optimizer, patience=self._scheduler_patience, verbose=True
-        )
+        scheduler = ReduceLROnPlateau(optimizer, patience=self._scheduler_patience, verbose=True)
         return {
             "optimizer": optimizer,
             "lr_scheduler": scheduler,
@@ -131,9 +123,7 @@ class NNModel(BaseModel):
         self._early_stopping_patience = early_stopping_patience
         self._batch_size = batch_size
 
-    def fit(
-        self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray
-    ) -> Self:
+    def fit(self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray) -> Self:
         # data
         X_tr = self._processor.fit_transform(X_tr, self._categorical_feature_dims)
         X_va = self._processor.transform(X_va)
@@ -159,12 +149,8 @@ class NNModel(BaseModel):
         )
 
         # training
-        early_stop_callback = EarlyStopping(
-            monitor="val_loss", patience=self._early_stopping_patience
-        )
-        checkpoint_callback = ModelCheckpoint(
-            monitor="val_loss", save_top_k=1, mode="min"
-        )
+        early_stop_callback = EarlyStopping(monitor="val_loss", patience=self._early_stopping_patience)
+        checkpoint_callback = ModelCheckpoint(monitor="val_loss", save_top_k=1, mode="min")
         self._trainer = pl.Trainer(
             max_epochs=self._max_epochs,
             callbacks=[early_stop_callback, checkpoint_callback],
@@ -191,9 +177,7 @@ class NNModel(BaseModel):
 
         X = self._processor.transform(X)
         dataset = MCTSDataset(X, self._categorical_features)
-        dataloader = DataLoader(
-            dataset, batch_size=self._batch_size, num_workers=NUM_WORKERS
-        )
+        dataloader = DataLoader(dataset, batch_size=self._batch_size, num_workers=NUM_WORKERS)
 
         preds = []
         self._model.eval()

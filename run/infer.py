@@ -33,9 +33,7 @@ config_local_env = Config(
 config_kaggle_env = Config(
     dataset_dir=Path(f"/kaggle/input/{DATASET}"),
     test_path=Path("/kaggle/input/um-game-playing-strength-of-mcts-variants/test.csv"),
-    submission_path=Path(
-        "/kaggle/input/um-game-playing-strength-of-mcts-variants/sample_submission.csv"
-    ),
+    submission_path=Path("/kaggle/input/um-game-playing-strength-of-mcts-variants/sample_submission.csv"),
 )
 
 if os.getenv("LOCAL_ENVIRONMENT"):
@@ -49,9 +47,7 @@ import kaggle_evaluation.mcts_inference_server  # noqa: E402
 
 def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
     # feature engineering
-    feature_processor = FeatureProcessor.load(
-        config.dataset_dir / "feature_processor.pickle"
-    )
+    feature_processor = FeatureProcessor.load(config.dataset_dir / "feature_processor.pickle")
     feature_processor.disable_feature_store()
     test = feature_processor.transform(test.to_pandas())
 

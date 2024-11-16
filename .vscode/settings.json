@@ -13,6 +13,10 @@
         "notebook.source.fixAll": "explicit",
         "notebook.source.organizeImports": "explicit"
     },
+    "ruff.format.args": [
+        "--line-length",
+        "150"
+    ],
     "mypy-type-checker.args": [
         "--ignore-missing-imports",
         "--disallow-untyped-defs"

@@ -16,16 +16,9 @@ class MCTSDataset(Dataset):
         categorical_features: list[str],
         y: np.ndarray | None = None,
     ) -> None:
-        numerical_features = [
-            col for col in X.columns if col not in categorical_features
-        ]
-        self._numerical = torch.tensor(
-            X[numerical_features].values, dtype=torch.float32
-        )
-        self._categorical = {
-            col: torch.tensor(X[col].values, dtype=torch.int64)
-            for col in categorical_features
-        }
+        numerical_features = [col for col in X.columns if col not in categorical_features]
+        self._numerical = torch.tensor(X[numerical_features].values, dtype=torch.float32)
+        self._categorical = {col: torch.tensor(X[col].values, dtype=torch.int64) for col in categorical_features}
         self._target = torch.tensor(y, dtype=torch.float32) if y is not None else None
 
     def __len__(self) -> int:
