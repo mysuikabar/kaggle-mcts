@@ -1,3 +1,4 @@
+import pickle
 from logging import getLogger
 from pathlib import Path
 
@@ -5,16 +6,15 @@ import hydra
 import numpy as np
 import pandas as pd
 import wandb
-from config.train import Config
+from conf.config import Config
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
 
 from features import feature_expressions_master
 from metric import calculate_metrics, log_metrics
-from ml.model.factory import ModelFactory
-from process.feature import FeatureProcessor
-from process.process import PreProcessor
-from process.text import TfidfProcessor
+from model.factory import ModelFactory
+from process.feature import FeatureProcessor, FeatureStore
+from process.pipeline import PreprocessPipeline
 from process.utils import filter_features
 from utils.seed import seed_everything
 
@@ -24,11 +24,21 @@ cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
 
 
-def load_processor(tfidf_dir: Path) -> PreProcessor:
-    col2tfidf: dict[str, TfidfProcessor] = {}
+def load_feature_processor(
+    use_features: list[str], feature_store_dir: Path | None = None
+) -> FeatureProcessor:
+    features = feature_expressions_master.filter(use_features)
+    feature_store = FeatureStore(feature_store_dir) if feature_store_dir else None
+    return FeatureProcessor(features, feature_store)
+
+
+def load_process_pipeline(
+    tfidf_dir: Path, use_cols: list[str] | None = None
+) -> PreprocessPipeline:
+    col2tfidf = {}
     for path in tfidf_dir.iterdir():
-        col2tfidf[path.stem] = TfidfProcessor.load(path)
-    return PreProcessor(col2tfidf)
+        col2tfidf[path.stem] = pickle.load(open(path, "rb"))
+    return PreprocessPipeline(col2tfidf, use_cols)
 
 
 @hydra.main(version_base=None, config_name="config")
@@ -41,8 +51,9 @@ def main(config: Config) -> None:
     logger.info(f"Raw data shape: {df.shape}")
 
     # feature engineering
-    features = feature_expressions_master.filter(config.feature.use_features)
-    feature_processor = FeatureProcessor(features, config.feature.feature_store_dir)
+    feature_processor = load_feature_processor(
+        config.feature.use_features, config.feature.store_dir
+    )
     X = feature_processor.transform(X)
     feature_processor.save("feature_processor.pickle")
     logger.info(f"Feature added data shape: {X.shape}")
@@ -56,40 +67,42 @@ def main(config: Config) -> None:
 
     for fold in sorted(fold_assignments.unique()):
         logger.info(f"Training fold {fold}")
+        output_dir = Path(f"fold_{fold}")
+        output_dir.mkdir(exist_ok=True)
 
+        # split
         idx_tr = fold_assignments[fold_assignments != fold].index
         idx_va = fold_assignments[fold_assignments == fold].index
         X_tr, y_tr = X.iloc[idx_tr], y[idx_tr]
         X_va, y_va = X.iloc[idx_va], y[idx_va]
 
         # preprocess
-        processor = load_processor(config.preprocess_dir / f"fold_{fold}")
-        X_tr, X_va = processor.fit_transform(X_tr), processor.transform(X_va)
-
+        features = None
         if config.importance_dir is not None:
             importance = pd.read_csv(
-                config.importance_dir / f"fold_{fold}" / "importance.csv"
+                config.importance_dir / f"fold_{fold}/importance.csv"
             )
             features = filter_features(importance, config.num_features)
-            X_tr, X_va = X_tr.filter(features), X_va.filter(features)
 
+        pipeline = load_process_pipeline(
+            config.preprocess_dir / f"fold_{fold}", use_cols=features
+        )
+        X_tr, X_va = pipeline.fit_transform(X_tr), pipeline.transform(X_va)
+        pipeline.save(output_dir / "pipeline.pickle")
+        X_tr.columns.to_series().to_csv(output_dir / "features.csv", index=False)
         logger.info(f"Processed data shape: {X_tr.shape}")
 
-        # train & predict
+        # train
         model = model_factory.build(config.model.type, **config.model.config)
         model.fit(X_tr, y_tr, X_va, y_va)
-        oof[idx_va] = model.predict(X_va)
-
-        # save
-        output_dir = Path(f"fold_{fold}")
-        output_dir.mkdir(exist_ok=True)
-        processor.save(output_dir / "processor.pickle")
         model.save(output_dir / "model.pickle")
-        X_tr.columns.to_series().to_csv(output_dir / "features.csv", index=False)
         try:
             model.feature_importance.to_csv(output_dir / "importance.csv", index=False)
         except AttributeError:
             logger.info("Model does not have feature importance")
+
+        # predict
+        oof[idx_va] = model.predict(X_va)
 
     # evaluate
     metrics = calculate_metrics(y, oof, fold_assignments)
