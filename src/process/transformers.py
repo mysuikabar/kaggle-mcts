@@ -24,6 +24,17 @@ class CategoricalConverter(OneToOneFeatureMixin, BaseEstimator):
         return X.astype(self._cat_mapping)
 
 
+class ColumnSelector(TransformerMixin, BaseEstimator):
+    def __init__(self, columns: list[str]) -> None:
+        self._columns = columns
+
+    def fit(self, X: pd.DataFrame, y: None = None) -> Self:
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        return X[self._columns]
+
+
 class ColumnDropper(TransformerMixin, BaseEstimator):
     def __init__(self, columns: list[str]) -> None:
         self._columns = columns

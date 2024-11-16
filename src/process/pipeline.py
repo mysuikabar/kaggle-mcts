@@ -9,11 +9,15 @@ from sklearn.pipeline import Pipeline
 from typing_extensions import Self
 
 from .consts import USELESS_COLUMNS
-from .transformers import CategoricalConverter, ColumnDropper, Tfidf
+from .transformers import CategoricalConverter, ColumnDropper, ColumnSelector, Tfidf
 
 
 class PreprocessPipeline(TransformerMixin, BaseEstimator):
-    def __init__(self, col2tfidf: dict[str, Tfidf] | None = None) -> None:
+    def __init__(
+        self,
+        col2tfidf: dict[str, Tfidf] | None = None,
+        use_columns: list[str] | None = None,
+    ) -> None:
         drop_columns = [
             "Id",
             "GameRulesetName",
@@ -52,6 +56,9 @@ class PreprocessPipeline(TransformerMixin, BaseEstimator):
             ("drop_columns", ColumnDropper(drop_columns)),
             ("categorical", CategoricalConverter()),
         ]
+
+        if use_columns:
+            transformers += [("select_columns", ColumnSelector(use_columns))]
 
         self._pipeline = Pipeline(transformers)
 
