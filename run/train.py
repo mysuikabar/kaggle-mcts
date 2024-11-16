@@ -36,14 +36,11 @@ def main(config: Config) -> None:
     seed_everything(config.seed)
 
     # load data
-    logger.info("Loading data")
     df = pd.read_csv(config.data_path)
-    X = df.drop(columns=[config.target])
-    y = df[config.target].values
+    X, y = df.drop(columns=[config.target]), df[config.target].values
     logger.info(f"Raw data shape: {df.shape}")
 
     # feature engineering
-    logger.info("Feature engineering")
     features = feature_expressions_master.filter(config.feature.use_features)
     feature_processor = FeatureProcessor(features, config.feature.feature_store_dir)
     X = feature_processor.transform(X)
