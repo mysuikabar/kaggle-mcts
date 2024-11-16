@@ -9,8 +9,7 @@ from sklearn.pipeline import Pipeline
 from typing_extensions import Self
 
 from .consts import USELESS_COLUMNS
-from .text import Tfidf
-from .utils import CategoricalConverter, ColumnDropper
+from .transformers import CategoricalConverter, ColumnDropper, Tfidf
 
 
 class PreprocessPipeline(TransformerMixin, BaseEstimator):
