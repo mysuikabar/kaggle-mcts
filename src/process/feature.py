@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 import polars as pl
-
-from .base import BaseProcessor
+from sklearn.base import BaseEstimator, TransformerMixin
+from typing_extensions import Self
 
 logger = getLogger(__name__)
 
@@ -45,13 +45,6 @@ class FeatureStore:
         self._dir_path = dir_path
         self._dir_path.mkdir(parents=True, exist_ok=True)
 
-    def has_feature(self, feature_name: str) -> bool:
-        """
-        Check if a feature exists in the store.
-        """
-        file_path = self._dir_path / f"{feature_name}.parquet"
-        return file_path.exists()
-
     def save(self, df: pl.DataFrame, feature_name: str) -> None:
         """
         Save a feature DataFrame to a parquet file.
@@ -73,7 +66,7 @@ class FeatureStore:
             raise FileNotFoundError(f"Feature {feature_name} not found.")
 
 
-class FeatureProcessor(BaseProcessor):
+class FeatureProcessor(TransformerMixin, BaseEstimator):
     """
     A class for processing features.
     """
@@ -81,18 +74,19 @@ class FeatureProcessor(BaseProcessor):
     def __init__(
         self,
         feature_expressions: FeatureExpressions,
-        feature_store_dir: Path | None = None,
+        feature_store: FeatureStore | None = None,
     ) -> None:
         self._feature_expressions = feature_expressions
-        self._feature_store = (
-            FeatureStore(feature_store_dir) if feature_store_dir else None
-        )
+        self._feature_store = feature_store
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def fit(self, X: pd.DataFrame, y: None = None) -> Self:
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Process features on the input DataFrame.
         """
-        df_result = pl.DataFrame(df)
+        df_result = pl.DataFrame(X)
 
         if self._feature_store is None:
             expressions = [
