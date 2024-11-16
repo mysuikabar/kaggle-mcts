@@ -24,7 +24,7 @@ class XGBoostConfig:
     booster: str = "gbtree"
     learning_rate: float = 0.05
     min_split_loss: float = 0
-    max_depth: int = 6
+    max_depth: int = 12
     min_child_weight: float = 1
     subsample: float = 0.8
     reg_lambda: float = 1
