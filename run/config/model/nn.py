@@ -11,10 +11,10 @@ nn_config = NNConfig(
         "LudRules_players": 9,
     },
     embedding_dim=4,
-    hidden_dims=[512, 256, 128, 64],
+    hidden_dims=[1024, 512, 256],
     dropout_rate=0.1,
     learning_rate=1e-4,
-    early_stopping_patience=5,
+    early_stopping_patience=10,
     max_epochs=1000,
-    batch_size=1024,
+    batch_size=512,
 )
