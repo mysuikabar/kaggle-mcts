@@ -8,7 +8,7 @@ import pandas as pd
 import polars as pl
 
 from consts import REPO_ROOT
-from ml.model.factory import ModelFactory
+from model.factory import ModelFactory
 from process.feature import FeatureProcessor
 from process.pipeline import PreprocessPipeline, postprocess
 
