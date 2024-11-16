@@ -14,25 +14,6 @@ from .transformers import CategoricalConverter, ColumnDropper, Tfidf
 
 class PreprocessPipeline(TransformerMixin, BaseEstimator):
     def __init__(self, col2tfidf: dict[str, Tfidf] | None = None) -> None:
-        transformers = []
-
-        # tfidf
-        if col2tfidf:
-            transformers.append(
-                (
-                    "tfidf",
-                    ColumnTransformer(
-                        [
-                            (f"tfidf_{col}", tfidf, col)
-                            for col, tfidf in col2tfidf.items()
-                        ],
-                        remainder="passthrough",
-                        n_jobs=len(col2tfidf),
-                    ),
-                )
-            )
-
-        # drop columns
         drop_columns = [
             "Id",
             "GameRulesetName",
@@ -48,10 +29,29 @@ class PreprocessPipeline(TransformerMixin, BaseEstimator):
             "num_losses_agent1",
             "utility_agent1",
         ] + USELESS_COLUMNS
-        transformers.append(("column_dropper", ColumnDropper(columns=drop_columns)))
 
-        # categorical converter
-        transformers.append(("categorical_converter", CategoricalConverter()))
+        # create pipeline
+        transformers = []
+
+        if col2tfidf:
+            transformers += [
+                (
+                    "tfidf",
+                    ColumnTransformer(
+                        [
+                            (f"tfidf_{col}", tfidf, col)
+                            for col, tfidf in col2tfidf.items()
+                        ],
+                        remainder="passthrough",
+                        n_jobs=len(col2tfidf),
+                    ),
+                )
+            ]
+
+        transformers += [
+            ("drop_columns", ColumnDropper(drop_columns)),
+            ("categorical", CategoricalConverter()),
+        ]
 
         self._pipeline = Pipeline(transformers)
 
