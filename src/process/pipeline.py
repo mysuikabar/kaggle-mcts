@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sklearn import set_config
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -10,6 +11,8 @@ from typing_extensions import Self
 
 from .consts import USELESS_COLUMNS
 from .transformers import CategoricalConverter, ColumnDropper, ColumnSelector, Tfidf
+
+set_config(transform_output="pandas")
 
 
 class PreprocessPipeline(TransformerMixin, BaseEstimator):

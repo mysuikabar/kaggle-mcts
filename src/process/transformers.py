@@ -26,24 +26,24 @@ class CategoricalConverter(OneToOneFeatureMixin, BaseEstimator):
 
 class ColumnSelector(TransformerMixin, BaseEstimator):
     def __init__(self, columns: list[str]) -> None:
-        self._columns = columns
+        self.columns = columns
 
     def fit(self, X: pd.DataFrame, y: None = None) -> Self:
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        return X[self._columns]
+        return X.filter(self.columns)
 
 
 class ColumnDropper(TransformerMixin, BaseEstimator):
     def __init__(self, columns: list[str]) -> None:
-        self._columns = columns
+        self.columns = columns
 
     def fit(self, X: pd.DataFrame, y: None = None) -> Self:
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        return X.drop(columns=self._columns, errors="ignore")
+        return X.drop(columns=self.columns, errors="ignore")
 
 
 class Tfidf(TransformerMixin, BaseEstimator):
@@ -84,6 +84,5 @@ class Tfidf(TransformerMixin, BaseEstimator):
         logger.info(f"Transforming text to tf-idf features done for {X.name}")
 
         columns = self._vectorizer.get_feature_names_out().tolist()
-        columns = [f"tfidf_{X.name}_{col}" for col in columns]
 
         return pd.DataFrame(features, index=X.index, columns=columns)
