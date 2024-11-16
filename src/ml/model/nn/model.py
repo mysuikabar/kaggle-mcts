@@ -17,7 +17,7 @@ from ..base import BaseConfig, BaseModel
 from .dataset import MCTSDataModule, MCTSDataset
 from .processor import Preprocessor
 
-NUM_WORKERS = 4  # os.cpu_count()
+NUM_WORKERS = 0  # os.cpu_count()
 
 
 @dataclass

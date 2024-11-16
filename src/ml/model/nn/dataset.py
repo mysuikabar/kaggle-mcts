@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-NUM_WORKERS = 4  # os.cpu_count()
+NUM_WORKERS = 0  # os.cpu_count()
 
 
 class MCTSDataset(Dataset):
