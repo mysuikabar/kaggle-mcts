@@ -64,16 +64,14 @@ def main(config: Config) -> None:
 
         # preprocess
         processor = load_processor(config.preprocess_dir / f"fold_{fold}")
-        X_tr = processor.fit_transform(X_tr)
-        X_va = processor.transform(X_va)
+        X_tr, X_va = processor.fit_transform(X_tr), processor.transform(X_va)
 
         if config.importance_dir is not None:
             importance = pd.read_csv(
                 config.importance_dir / f"fold_{fold}" / "importance.csv"
             )
             features = filter_features(importance, config.num_features)
-            X_tr = X_tr.filter(features)
-            X_va = X_va.filter(features)
+            X_tr, X_va = X_tr.filter(features), X_va.filter(features)
 
         logger.info(f"Processed data shape: {X_tr.shape}")
 
