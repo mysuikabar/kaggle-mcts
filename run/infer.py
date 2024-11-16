@@ -1,18 +1,27 @@
 import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import polars as pl
-from config.infer import Config
 
 from consts import REPO_ROOT
 from ml.model.factory import ModelFactory
 from process.feature import FeatureProcessor
-from process.process import PreProcessor, postprocess
+from process.pipeline import PreprocessPipeline, postprocess
 
 DATASET = "run_name"  # change here
+
+
+@dataclass
+class Config:
+    dataset_dir: Path
+    test_path: Path
+    submission_path: Path
+    evaluation_api_path: Path | None = None
+
 
 config_local_env = Config(
     dataset_dir=REPO_ROOT / f"outputs/{DATASET}",
@@ -50,7 +59,7 @@ def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
 
     for dir_path in config.dataset_dir.glob("fold_*"):
         # process test data
-        processor = PreProcessor.load(dir_path / "processor.pickle")
+        processor = PreprocessPipeline.load(dir_path / "processor.pickle")
         features = pd.read_csv(dir_path / "features.csv")["0"].tolist()
         X = processor.transform(test).filter(features)
 
