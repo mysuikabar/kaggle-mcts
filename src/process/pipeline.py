@@ -6,11 +6,17 @@ import pandas as pd
 from sklearn import set_config
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import FeatureUnion, Pipeline
 from typing_extensions import Self
 
 from .consts import USELESS_COLUMNS
-from .transformers import CategoricalConverter, ColumnDropper, ColumnSelector, Tfidf
+from .transformers import (
+    CategoricalConverter,
+    ColumnDropper,
+    ColumnSelector,
+    IdentityTransformer,
+    Tfidf,
+)
 
 set_config(transform_output="pandas")
 
@@ -21,6 +27,9 @@ class PreprocessPipeline(TransformerMixin, BaseEstimator):
         col2tfidf: dict[str, Tfidf] | None = None,
         use_columns: list[str] | None = None,
     ) -> None:
+        self.col2tfidf = col2tfidf
+        self.use_columns = use_columns
+
         drop_columns = [
             "Id",
             "GameRulesetName",
@@ -41,16 +50,8 @@ class PreprocessPipeline(TransformerMixin, BaseEstimator):
         transformers = []
 
         if col2tfidf:
-            transformers += [
-                (
-                    "tfidf",
-                    ColumnTransformer(
-                        [(f"tfidf_{col}", tfidf, col) for col, tfidf in col2tfidf.items()],
-                        remainder="passthrough",
-                        n_jobs=len(col2tfidf),
-                    ),
-                )
-            ]
+            tfidfs = ColumnTransformer([(f"tfidf_{col}", tfidf, col) for col, tfidf in col2tfidf.items()], remainder="drop", n_jobs=len(col2tfidf))
+            transformers += [("add_tfidf", FeatureUnion([("tfidfs", tfidfs), ("identity", IdentityTransformer())]))]
 
         transformers += [
             ("drop_columns", ColumnDropper(drop_columns)),

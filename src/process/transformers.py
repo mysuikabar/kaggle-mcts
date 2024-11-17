@@ -12,6 +12,14 @@ from .consts import STOP_WORDS
 logger = getLogger(__name__)
 
 
+class IdentityTransformer(TransformerMixin, BaseEstimator):
+    def fit(self, X: pd.DataFrame, y: None = None) -> Self:
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        return X
+
+
 class CategoricalConverter(OneToOneFeatureMixin, BaseEstimator):
     def fit(self, X: pd.DataFrame, y: None = None) -> Self:
         self._cat_mapping = {
