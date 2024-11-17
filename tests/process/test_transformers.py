@@ -28,7 +28,7 @@ def test_tabular_data_transformer():  # type: ignore
 
     assert isinstance(transformed, pd.DataFrame)
     assert transformed.index.equals(X_va.index)
-    assert list(transformed.columns) == list(X_va.columns)
+    assert set(transformed.columns) == set(X_va.columns)
     assert transformer.n_categories_ == {"cat1": 4, "cat2": 4}
     assert transformed["cat1"].min() == 1
     assert transformed["cat2"].min() == 0

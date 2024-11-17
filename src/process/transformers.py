@@ -15,7 +15,7 @@ from .consts import STOP_WORDS
 logger = getLogger(__name__)
 
 
-class IdentityTransformer(TransformerMixin, BaseEstimator):
+class IdentityTransformer(OneToOneFeatureMixin, BaseEstimator):
     def fit(self, X: pd.DataFrame, y: None = None) -> Self:
         return self
 
@@ -45,6 +45,9 @@ class ColumnSelector(TransformerMixin, BaseEstimator):
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         return X.filter(self.columns)
 
+    def get_feature_names_out(self, input_features: list[str] | None = None) -> list[str]:
+        return self.columns
+
 
 class ColumnDropper(TransformerMixin, BaseEstimator):
     def __init__(self, columns: list[str]) -> None:
@@ -55,6 +58,11 @@ class ColumnDropper(TransformerMixin, BaseEstimator):
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         return X.drop(columns=self.columns, errors="ignore")
+
+    def get_feature_names_out(self, input_features: list[str] | None = None) -> list[str]:
+        if input_features is None:
+            raise ValueError("input_features must be provided")
+        return [col for col in input_features if col not in self.columns]
 
 
 class Tfidf(TransformerMixin, BaseEstimator):
@@ -98,6 +106,9 @@ class Tfidf(TransformerMixin, BaseEstimator):
 
         return pd.DataFrame(features, index=X.index, columns=columns)
 
+    def get_feature_names_out(self, input_features: list[str] | None = None) -> list[str]:
+        return self._vectorizer.get_feature_names_out()
+
 
 class TabularDataTransformer(TransformerMixin, BaseEstimator):
     """
@@ -115,8 +126,8 @@ class TabularDataTransformer(TransformerMixin, BaseEstimator):
 
         self._preprocessor = ColumnTransformer(
             [
-                ("categorical", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1), self.categorical_columns_),
                 ("numerical", QuantileTransformer(output_distribution="normal", random_state=self.random_state), self.numerical_columns_),
+                ("categorical", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1), self.categorical_columns_),
             ]
         ).set_output(transform="pandas")
         self._preprocessor.fit(X)
@@ -133,6 +144,9 @@ class TabularDataTransformer(TransformerMixin, BaseEstimator):
         # add 1 to categorical values to avoid minus value (for nn.Embedding)
         n_cat_cols = len(self.categorical_columns_)
         if n_cat_cols > 0:
-            transformed.iloc[:, :n_cat_cols] += 1
+            transformed.iloc[:, -n_cat_cols:] += 1
 
-        return pd.DataFrame(transformed.values, index=X.index, columns=self.categorical_columns_ + self.numerical_columns_).reindex(columns=X.columns)
+        return pd.DataFrame(transformed.values, index=X.index, columns=self.numerical_columns_ + self.categorical_columns_)
+
+    def get_feature_names_out(self, input_features: list[str] | None = None) -> list[str]:
+        return self.numerical_columns_ + self.categorical_columns_
