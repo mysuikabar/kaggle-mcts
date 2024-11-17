@@ -14,7 +14,7 @@ from features import feature_expressions_master
 from metric import calculate_metrics, log_metrics
 from model.factory import ModelFactory
 from process.feature import FeatureProcessor, FeatureStore
-from process.pipeline import PreprocessPipeline
+from process.pipeline import PreprocessPipeline, postprocess
 from process.transformers import TabularDataTransformer
 from utils.helper import save_pickle, to_primitive
 from utils.seed import seed_everything
@@ -111,7 +111,7 @@ def main(config: Config) -> None:
             model.save(output_dir / "model")
 
         # predict
-        oof[idx_va] = model.predict(X_va)
+        oof[idx_va] = postprocess(model.predict(X_va))
 
     # evaluate
     metrics = calculate_metrics(y, oof, fold_assignments)
