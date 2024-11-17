@@ -118,7 +118,7 @@ class TabularDataTransformer(TransformerMixin, BaseEstimator):
                 ("categorical", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1), self.categorical_columns_),
                 ("numerical", QuantileTransformer(output_distribution="normal", random_state=self.random_state), self.numerical_columns_),
             ]
-        )
+        ).set_output(transform="pandas")
         self._preprocessor.fit(X)
 
         # save number of categories for each categorical
@@ -135,4 +135,4 @@ class TabularDataTransformer(TransformerMixin, BaseEstimator):
         if n_cat_cols > 0:
             transformed.iloc[:, :n_cat_cols] += 1
 
-        return pd.DataFrame(transformed, index=X.index, columns=self.categorical_columns_ + self.numerical_columns_).reindex(columns=X.columns)
+        return pd.DataFrame(transformed.values, index=X.index, columns=self.categorical_columns_ + self.numerical_columns_).reindex(columns=X.columns)
