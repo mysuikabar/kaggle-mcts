@@ -11,8 +11,12 @@ from consts import REPO_ROOT
 from model.factory import ModelFactory
 from process.feature import FeatureProcessor
 from process.pipeline import PreprocessPipeline, postprocess
+from process.transformers import TabularDataTransformer
+from utils.helper import load_pickle
 
-DATASET = "run_name"  # change here
+# overwrite these variables
+DATASET = "run_name"
+MODEL_TYPE = "catboost"  # "catboost" | "lightgbm" | "xgboost" | "nn"
 
 
 @dataclass
@@ -20,6 +24,7 @@ class Config:
     dataset_dir: Path
     test_path: Path
     submission_path: Path
+    model_type: str = MODEL_TYPE
     evaluation_api_path: Path | None = None
 
 
@@ -47,7 +52,7 @@ import kaggle_evaluation.mcts_inference_server  # noqa: E402
 
 def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
     # feature engineering
-    feature_processor = FeatureProcessor.load(config.dataset_dir / "feature_processor.pickle")
+    feature_processor: FeatureProcessor = load_pickle(config.dataset_dir / "feature_processor.pickle")
     feature_processor.disable_feature_store()
     test = feature_processor.transform(test.to_pandas())
 
@@ -55,14 +60,20 @@ def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
 
     for dir_path in config.dataset_dir.glob("fold_*"):
         # process test data
-        processor = PreprocessPipeline.load(dir_path / "processor.pickle")
+        pipeline: PreprocessPipeline = load_pickle(dir_path / "pipeline.pickle")
         features = pd.read_csv(dir_path / "features.csv")["0"].tolist()
-        X = processor.transform(test).filter(features)
+        X = pipeline.transform(test).filter(features)
+
+        # load model
+        if config.model_type != "nn":
+            model = ModelFactory.load(dir_path / "model.pickle")
+        else:
+            transformer: TabularDataTransformer = load_pickle(dir_path / "transformer.pickle")
+            X = transformer.transform(X)
+            model = ModelFactory.load(dir_path / "model")
 
         # predict
-        model = ModelFactory.load(dir_path / "model.pickle")
         pred = model.predict(X)
-
         pred = postprocess(pred)
         preds.append(pred)
 
