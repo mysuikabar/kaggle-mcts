@@ -89,7 +89,7 @@ class NNModel(BaseModel):
 
         torch.save(self._model.state_dict(), filepath / "model.pth")
         with open(filepath / "model_config.yaml", "w") as f:
-            yaml.dump(self._model_config, f)
+            yaml.dump(self._model_config, f, default_flow_style=False)
 
     def load(self, filepath: str | Path) -> Self:  # type: ignore
         filepath = Path(filepath)
