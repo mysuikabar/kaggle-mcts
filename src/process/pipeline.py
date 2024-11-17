@@ -1,6 +1,3 @@
-import pickle
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 from sklearn import set_config
@@ -69,20 +66,6 @@ class PreprocessPipeline(TransformerMixin, BaseEstimator):
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         return self._pipeline.transform(X)
-
-    def save(self, filepath: str | Path) -> None:
-        with open(filepath, "wb") as file:
-            pickle.dump(self, file)
-
-    @classmethod
-    def load(cls, filepath: str | Path) -> Self:
-        with open(filepath, "rb") as file:
-            obj = pickle.load(file)
-
-        if not isinstance(obj, cls):
-            raise TypeError(f"Loaded object type does not match expected type. " f"Expected: {cls.__name__}, Actual: {type(obj).__name__}")
-
-        return obj
 
 
 def postprocess(pred: np.ndarray) -> np.ndarray:

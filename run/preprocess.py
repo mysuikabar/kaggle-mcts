@@ -1,4 +1,3 @@
-import pickle
 from dataclasses import dataclass, field
 from logging import getLogger
 from pathlib import Path
@@ -15,6 +14,7 @@ from consts import REPO_ROOT
 from features import feature_expressions_master
 from process.feature import FeatureProcessor
 from process.transformers import Tfidf
+from utils.helper import save_pickle
 from utils.seed import seed_everything
 
 hydra_config = {
@@ -82,8 +82,7 @@ def main(config: Config) -> None:
         # save tf-idf instances as pickle
         Path(f"fold_{fold}").mkdir(exist_ok=True)
         for i, feature in enumerate(config.tfidf.text_features):
-            with open(f"fold_{fold}/{feature}.pickle", "wb") as f:
-                pickle.dump(transformer.named_transformers_[feature], f)
+            save_pickle(transformer.named_transformers_[feature], f"fold_{fold}/{feature}.pickle")
 
         fold_assignments[idx_va] = fold
 

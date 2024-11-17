@@ -16,7 +16,7 @@ from model.factory import ModelFactory
 from process.feature import FeatureProcessor, FeatureStore
 from process.pipeline import PreprocessPipeline
 from process.transformers import TabularDataTransformer
-from utils.helper import to_primitive
+from utils.helper import save_pickle, to_primitive
 from utils.seed import seed_everything
 
 logger = getLogger(__name__)
@@ -58,7 +58,7 @@ def main(config: Config) -> None:
     # feature engineering
     feature_processor = load_feature_processor(config.feature.use_features, config.feature.store_dir)
     X = feature_processor.transform(X)
-    feature_processor.save("feature_processor.pickle")
+    save_pickle(feature_processor, "feature_processor.pickle")
     logger.info(f"Feature added data shape: {X.shape}")
 
     # cross validation
@@ -86,7 +86,7 @@ def main(config: Config) -> None:
 
         pipeline = load_process_pipeline(tfidf_dir=tfidf_dir, use_columns=features)
         X_tr, X_va = pipeline.fit_transform(X_tr), pipeline.transform(X_va)
-        pipeline.save(output_dir / "pipeline.pickle")
+        save_pickle(pipeline, output_dir / "pipeline.pickle")
         X_tr.columns.to_series().to_csv(output_dir / "features.csv", index=False)
         logger.info(f"Processed data shape: {X_tr.shape}")
 
@@ -99,7 +99,7 @@ def main(config: Config) -> None:
         else:
             transformer = TabularDataTransformer()
             X_tr, X_va = transformer.fit_transform(X_tr), transformer.transform(X_va)
-            pickle.dump(transformer, open(output_dir / "model" / "transformer.pickle", "wb"))
+            save_pickle(transformer, output_dir / "transformer.pickle")
 
             model = model_factory.build(
                 config.model.type,
