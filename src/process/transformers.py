@@ -15,7 +15,7 @@ from .consts import STOP_WORDS
 logger = getLogger(__name__)
 
 
-class IdentityTransformer(OneToOneFeatureMixin, BaseEstimator):
+class IdentityTransformer(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
     def fit(self, X: pd.DataFrame, y: None = None) -> Self:
         return self
 
@@ -23,7 +23,7 @@ class IdentityTransformer(OneToOneFeatureMixin, BaseEstimator):
         return X
 
 
-class CategoricalConverter(OneToOneFeatureMixin, BaseEstimator):
+class CategoricalConverter(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
     def fit(self, X: pd.DataFrame, y: None = None) -> Self:
         self._cat_mapping = {
             feature: "category"
