@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from sklearn import set_config
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import FeatureUnion, Pipeline
@@ -14,8 +13,6 @@ from .transformers import (
     IdentityTransformer,
     Tfidf,
 )
-
-set_config(transform_output="pandas")
 
 
 class PreprocessPipeline(TransformerMixin, BaseEstimator):
@@ -58,7 +55,7 @@ class PreprocessPipeline(TransformerMixin, BaseEstimator):
         if use_columns:
             transformers += [("select_columns", ColumnSelector(use_columns))]
 
-        self._pipeline = Pipeline(transformers)
+        self._pipeline = Pipeline(transformers).set_output(transform="pandas")
 
     def fit(self, X: pd.DataFrame, y: None = None) -> Self:
         self._pipeline.fit(X)
