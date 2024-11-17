@@ -133,6 +133,6 @@ class TabularDataTransformer(TransformerMixin, BaseEstimator):
         # add 1 to categorical values to avoid minus value (for nn.Embedding)
         n_cat_cols = len(self.categorical_columns_)
         if n_cat_cols > 0:
-            transformed[:, :n_cat_cols] += 1
+            transformed.iloc[:, :n_cat_cols] += 1
 
         return pd.DataFrame(transformed, index=X.index, columns=self.categorical_columns_ + self.numerical_columns_).reindex(columns=X.columns)
