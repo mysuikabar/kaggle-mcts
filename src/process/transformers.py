@@ -2,9 +2,12 @@ import re
 import string
 from logging import getLogger
 
+import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, OneToOneFeatureMixin, TransformerMixin
+from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import OrdinalEncoder, QuantileTransformer
 from typing_extensions import Self
 
 from .consts import STOP_WORDS
@@ -94,3 +97,42 @@ class Tfidf(TransformerMixin, BaseEstimator):
         columns = self._vectorizer.get_feature_names_out().tolist()
 
         return pd.DataFrame(features, index=X.index, columns=columns)
+
+
+class TabularDataTransformer(TransformerMixin, BaseEstimator):
+    """
+    - Standardize numerical features with QuantileTransformer
+    - Encode categorical features with OrdinalEncoder
+    """
+
+    def __init__(self, random_state: int = 0) -> None:
+        self.random_state = random_state
+
+    def fit(self, X: pd.DataFrame, y: None = None) -> Self:
+        self.numerical_columns_ = X.select_dtypes(include=np.number).columns.tolist()
+        self.categorical_columns_ = X.select_dtypes(exclude=np.number).columns.tolist()
+        assert len(self.numerical_columns_) + len(self.categorical_columns_) == X.shape[1], "All columns must be either numerical or categorical"
+
+        self._preprocessor = ColumnTransformer(
+            [
+                ("categorical", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1), self.categorical_columns_),
+                ("numerical", QuantileTransformer(output_distribution="normal", random_state=self.random_state), self.numerical_columns_),
+            ]
+        )
+        self._preprocessor.fit(X)
+
+        # save number of categories for each categorical
+        cat_encoder = self._preprocessor.named_transformers_["categorical"]
+        self.n_categories_ = {col: len(cats) + 1 for col, cats in zip(self.categorical_columns_, cat_encoder.categories_)}  # +1 for unknown value
+
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        transformed = self._preprocessor.transform(X)
+
+        # add 1 to categorical values to avoid minus value (for nn.Embedding)
+        n_cat_cols = len(self.categorical_columns_)
+        if n_cat_cols > 0:
+            transformed[:, :n_cat_cols] += 1
+
+        return pd.DataFrame(transformed, index=X.index, columns=self.categorical_columns_ + self.numerical_columns_).reindex(columns=X.columns)
