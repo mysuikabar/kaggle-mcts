@@ -15,6 +15,8 @@ from metric import calculate_metrics, log_metrics
 from model.factory import ModelFactory
 from process.feature import FeatureProcessor, FeatureStore
 from process.pipeline import PreprocessPipeline
+from process.transformers import TabularDataTransformer
+from utils.helper import to_primitive
 from utils.seed import seed_everything
 
 logger = getLogger(__name__)
@@ -89,13 +91,24 @@ def main(config: Config) -> None:
         logger.info(f"Processed data shape: {X_tr.shape}")
 
         # train
-        model = model_factory.build(config.model.type, **config.model.config)
-        model.fit(X_tr, y_tr, X_va, y_va)
-        model.save(output_dir / "model.pickle")
-        try:
+        if config.model.type != "nn":
+            model = model_factory.build(config.model.type, **config.model.config)
+            model.fit(X_tr, y_tr, X_va, y_va)
+            model.save(output_dir / "model.pickle")
             model.feature_importance.to_csv(output_dir / "importance.csv", index=False)
-        except AttributeError:
-            logger.info("Model does not have feature importance")
+        else:
+            transformer = TabularDataTransformer()
+            X_tr, X_va = transformer.fit_transform(X_tr), transformer.transform(X_va)
+            pickle.dump(transformer, open(output_dir / "model" / "transformer.pickle", "wb"))
+
+            model = model_factory.build(
+                config.model.type,
+                num_numerical_features=len(transformer.numerical_columns_),
+                categorical_feature_dims=transformer.n_categories_,
+                **to_primitive(config.model.config),
+            )
+            model.fit(X_tr, y_tr, X_va, y_va)
+            model.save(output_dir / "model")
 
         # predict
         oof[idx_va] = model.predict(X_va)
