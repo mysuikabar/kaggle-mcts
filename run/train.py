@@ -8,7 +8,7 @@ import pandas as pd
 import wandb
 from conf.config import Config
 from hydra.core.config_store import ConfigStore
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from features import feature_expressions_master
 from metric import calculate_metrics, log_metrics
@@ -16,13 +16,21 @@ from model.factory import ModelFactory
 from process.feature import FeatureProcessor, FeatureStore
 from process.pipeline import PreprocessPipeline, postprocess
 from process.transformers import TabularDataTransformer
-from utils.helper import save_pickle, to_primitive
+from utils.helper import save_pickle
 from utils.seed import seed_everything
 
 logger = getLogger(__name__)
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
+
+
+def to_primitive(obj):  # type: ignore
+    if isinstance(obj, DictConfig):
+        return {k: to_primitive(v) for k, v in obj.items()}
+    elif isinstance(obj, ListConfig):
+        return [to_primitive(x) for x in obj]
+    return obj
 
 
 def load_feature_processor(use_features: list[str], feature_store_dir: Path | None = None) -> FeatureProcessor:
