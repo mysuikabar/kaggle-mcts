@@ -13,10 +13,11 @@ class MCTSDataset(Dataset):
     def __init__(
         self,
         X: pd.DataFrame,
-        categorical_features: list[str],
         y: np.ndarray | None = None,
     ) -> None:
-        numerical_features = [col for col in X.columns if col not in categorical_features]
+        numerical_features = X.select_dtypes(include=[np.number]).columns.tolist()
+        categorical_features = X.select_dtypes(exclude=[np.number]).columns.tolist()
+
         self._numerical = torch.tensor(X[numerical_features].values, dtype=torch.float32)
         self._categorical = {col: torch.tensor(X[col].values, dtype=torch.int64) for col in categorical_features}
         self._target = torch.tensor(y, dtype=torch.float32) if y is not None else None
@@ -42,12 +43,11 @@ class MCTSDataModule(pl.LightningDataModule):
         X_va: pd.DataFrame,
         y_tr: np.ndarray,
         y_va: np.ndarray,
-        categorical_features: list[str],
         batch_size: int = 64,
     ) -> None:
         super().__init__()
-        self._train_dataset = MCTSDataset(X_tr, categorical_features, y_tr)
-        self._val_dataset = MCTSDataset(X_va, categorical_features, y_va)
+        self._train_dataset = MCTSDataset(X_tr, y_tr)
+        self._val_dataset = MCTSDataset(X_va, y_va)
         self._batch_size = batch_size
 
     def train_dataloader(self) -> DataLoader:
