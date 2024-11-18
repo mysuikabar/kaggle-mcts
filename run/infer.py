@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
+import model  # noqa: F401
+import process  # noqa: F401
 from consts import REPO_ROOT
 from model.gbdt import GBDTBaseModel
 from model.nn import NNModel
