@@ -8,15 +8,16 @@ import pandas as pd
 import polars as pl
 
 from consts import REPO_ROOT
-from model.factory import ModelFactory
+from model.gbdt import GBDTBaseModel
+from model.nn import NNModel
 from process.feature import FeatureProcessor
 from process.pipeline import PreprocessPipeline, postprocess
 from process.transformers import TabularDataTransformer
 from utils.helper import load_pickle
 
 # overwrite these variables
-DATASET = "run_name"
 MODEL_TYPE = "catboost"  # "catboost" | "lightgbm" | "xgboost" | "nn"
+DATASET = "run_name"
 
 
 @dataclass
@@ -66,11 +67,11 @@ def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
 
         # load model
         if config.model_type != "nn":
-            model = ModelFactory.load(dir_path / "model.pickle")
+            model = GBDTBaseModel.load(dir_path / "model.pickle")
         else:
             transformer: TabularDataTransformer = load_pickle(dir_path / "transformer.pickle")
             X = transformer.transform(X)
-            model = ModelFactory.load(dir_path / "model")
+            model = NNModel.load(dir_path / "model")
 
         # predict
         pred = model.predict(X)
