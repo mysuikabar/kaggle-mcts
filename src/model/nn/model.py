@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -17,13 +16,33 @@ NUM_WORKERS = 0  # os.cpu_count()
 
 
 class NNModel(BaseModel):
-    def __init__(self, max_epochs: int, early_stopping_patience: int, batch_size: int, **model_params: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        num_numerical_features: int,
+        categorical_feature_dims: dict[str, int],
+        embedding_dim: int,
+        hidden_dims: list[int],
+        dropout_rate: float,
+        learning_rate: float,
+        scheduler_patience: int,
+        max_epochs: int,
+        early_stopping_patience: int,
+        batch_size: int,
+    ) -> None:
+        self._model_params = {
+            "num_numerical_features": num_numerical_features,
+            "categorical_feature_dims": categorical_feature_dims,
+            "embedding_dim": embedding_dim,
+            "hidden_dims": hidden_dims,
+            "dropout_rate": dropout_rate,
+            "learning_rate": learning_rate,
+            "scheduler_patience": scheduler_patience,
+        }
         self._max_epochs = max_epochs
         self._early_stopping_patience = early_stopping_patience
         self._batch_size = batch_size
 
-        self._model_params = model_params
-        self._model = NNModule(**model_params)  # type: ignore
+        self._model = NNModule(**self._model_params)  # type: ignore
 
     def fit(self, X_tr: pd.DataFrame, y_tr: np.ndarray, X_va: pd.DataFrame, y_va: np.ndarray) -> Self:
         datamodule = MCTSDataModule(X_tr, X_va, y_tr, y_va, batch_size=self._batch_size)

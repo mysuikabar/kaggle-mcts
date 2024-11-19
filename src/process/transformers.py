@@ -146,7 +146,10 @@ class TabularDataTransformer(TransformerMixin, BaseEstimator):
         if n_cat_cols > 0:
             transformed.iloc[:, -n_cat_cols:] += 1
 
-        return pd.DataFrame(transformed.values, index=X.index, columns=self.numerical_columns_ + self.categorical_columns_)
+        transformed = pd.DataFrame(transformed.values, index=X.index, columns=self.numerical_columns_ + self.categorical_columns_)
+        transformed[self.categorical_columns_] = transformed[self.categorical_columns_].astype(int).astype("category")
+
+        return transformed
 
     def get_feature_names_out(self, input_features: list[str] | None = None) -> list[str]:
         return self.numerical_columns_ + self.categorical_columns_
