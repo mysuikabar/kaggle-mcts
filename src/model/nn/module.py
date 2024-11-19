@@ -68,9 +68,6 @@ class NNModule(pl.LightningModule):
         self.log("val_loss", loss, prog_bar=True)
         return loss
 
-    def predict_step(self, batch: dict[str, Any], batch_idx: int, dataloader_idx: int | None = None) -> torch.Tensor:
-        return self(batch["numerical"], batch["categorical"])
-
     def configure_optimizers(self) -> dict[str, Any]:  # type: ignore
         optimizer = Adam(self.parameters(), lr=self._learning_rate)
         scheduler = ReduceLROnPlateau(optimizer, patience=self._scheduler_patience, verbose=True)

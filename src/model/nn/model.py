@@ -59,13 +59,16 @@ class NNModel(BaseModel):
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         dataset = MCTSDataset(X)
-        dataloader = DataLoader(dataset, batch_size=self._batch_size)
+        dataloader = DataLoader(dataset, batch_size=self._batch_size, shuffle=False, num_workers=NUM_WORKERS)
 
         self._model.eval()
-        trainer = Trainer()
-        predictions = trainer.predict(self._model, dataloader)
+        predictions = []
+        with torch.no_grad():
+            for batch in dataloader:
+                output = self._model(batch["numerical"], batch["categorical"])
+                predictions.append(output.cpu().numpy())
 
-        return np.concatenate(predictions)  # type: ignore
+        return np.concatenate(predictions)
 
     def save(self, filepath: str | Path) -> None:
         torch.save(
@@ -81,12 +84,14 @@ class NNModel(BaseModel):
 
     @classmethod
     def load(cls, filepath: str | Path) -> Self:
-        state = torch.load(filepath)
+        state = torch.load(filepath, weights_only=True)
 
-        model = cls(**state["model_params"])
-        model._model.load_state_dict(state["model"])
-        model._max_epochs = state["max_epochs"]
-        model._early_stopping_patience = state["early_stopping_patience"]
-        model._batch_size = state["batch_size"]
+        self = cls(
+            max_epochs=state["max_epochs"],
+            early_stopping_patience=state["early_stopping_patience"],
+            batch_size=state["batch_size"],
+            **state["model_params"],
+        )
+        self._model.load_state_dict(state["model"])
 
-        return model
+        return self
