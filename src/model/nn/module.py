@@ -34,14 +34,7 @@ class NNModule(pl.LightningModule):
         prev_dim = input_dim
 
         for hidden_dim in hidden_dims:
-            layers.extend(
-                [
-                    nn.Linear(prev_dim, hidden_dim),
-                    nn.BatchNorm1d(hidden_dim),
-                    nn.ReLU(),
-                    nn.Dropout(dropout_rate),
-                ]
-            )
+            layers.extend([nn.Linear(prev_dim, hidden_dim), nn.BatchNorm1d(hidden_dim), nn.ReLU(), nn.Dropout(dropout_rate)])
             prev_dim = hidden_dim
 
         layers.append(nn.Linear(prev_dim, 1))
@@ -81,8 +74,4 @@ class NNModule(pl.LightningModule):
     def configure_optimizers(self) -> dict[str, Any]:  # type: ignore
         optimizer = Adam(self.parameters(), lr=self._learning_rate)
         scheduler = ReduceLROnPlateau(optimizer, patience=self._scheduler_patience, verbose=True)
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": scheduler,
-            "monitor": "val_loss",
-        }
+        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
