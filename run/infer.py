@@ -73,7 +73,7 @@ def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
         else:
             transformer: TabularDataTransformer = load_pickle(dir_path / "transformer.pickle")
             X = transformer.transform(X)
-            model = NNModel.load(dir_path / "model")
+            model = NNModel.load(dir_path / "model.pth")
 
         # predict
         pred = model.predict(X)

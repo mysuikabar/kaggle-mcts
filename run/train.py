@@ -8,7 +8,7 @@ import pandas as pd
 import wandb
 from conf.config import Config
 from hydra.core.config_store import ConfigStore
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig
 
 from features import feature_expressions_master
 from metric import calculate_metrics, log_metrics
@@ -116,7 +116,7 @@ def main(config: Config) -> None:
                 **to_primitive(config.model.config),
             )
             model.fit(X_tr, y_tr, X_va, y_va)
-            model.save(output_dir / "model")
+            model.save(output_dir / "model.pth")
 
         # predict
         oof[idx_va] = postprocess(model.predict(X_va))
@@ -128,11 +128,7 @@ def main(config: Config) -> None:
     # log to wandb
     if config.wandb.enable:
         wandb.init(
-            project=config.wandb.project,
-            name=config.wandb.name,
-            notes=config.wandb.notes,
-            tags=[config.model.type],
-            config=OmegaConf.to_container(config),  # type: ignore
+            project=config.wandb.project, name=config.wandb.name, notes=config.wandb.notes, tags=[config.model.type], config=to_primitive(config)
         )
         wandb.log(metrics)
         wandb.finish()
