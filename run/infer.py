@@ -1,11 +1,13 @@
 import os
 import sys
 from dataclasses import dataclass
+from logging import StreamHandler, getLogger
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import polars as pl
+from tqdm import tqdm
 
 import model  # noqa: F401
 import process  # noqa: F401
@@ -17,29 +19,29 @@ from process.pipeline import PreprocessPipeline, postprocess
 from process.transformers import TabularDataTransformer
 from utils.helper import load_pickle
 
-# overwrite these variables
-MODEL_TYPE = "catboost"  # "catboost" | "lightgbm" | "xgboost" | "nn"
-DATASET = "run_name"
+# overwrite here
+MODEL_CONFIGS = [
+    {"model_type": "catboost", "dataset": "run_name", "weight": 1},
+]
 
 
 @dataclass
 class Config:
-    dataset_dir: Path
+    input_dir: Path
     test_path: Path
     submission_path: Path
-    model_type: str = MODEL_TYPE
     evaluation_api_path: Path | None = None
 
 
 config_local_env = Config(
-    dataset_dir=REPO_ROOT / f"outputs/{DATASET}",
+    input_dir=REPO_ROOT / "outputs",
     test_path=REPO_ROOT / "data/raw/test.csv",
     submission_path=REPO_ROOT / "data/raw/sample_submission.csv",
     evaluation_api_path=REPO_ROOT / "data/raw",
 )
 
 config_kaggle_env = Config(
-    dataset_dir=Path(f"/kaggle/input/{DATASET}"),
+    input_dir=Path("/kaggle/input/"),
     test_path=Path("/kaggle/input/um-game-playing-strength-of-mcts-variants/test.csv"),
     submission_path=Path("/kaggle/input/um-game-playing-strength-of-mcts-variants/sample_submission.csv"),
 )
@@ -52,37 +54,50 @@ else:
 
 import kaggle_evaluation.mcts_inference_server  # noqa: E402
 
+logger = getLogger(__name__)
+logger.addHandler(StreamHandler(sys.stdout))
+
 
 def predict(test: pl.DataFrame, submission: pl.DataFrame) -> pl.DataFrame:
-    # feature engineering
-    feature_processor: FeatureProcessor = load_pickle(config.dataset_dir / "feature_processor.pickle")
-    feature_processor.disable_feature_store()
-    test = feature_processor.transform(test.to_pandas())
+    predictions: list[np.ndarray] = []
 
-    preds = []
+    for model_config in MODEL_CONFIGS:
+        logger.info(f"Predicting with {model_config}")
 
-    for dir_path in config.dataset_dir.glob("fold_*"):
-        # process test data
-        pipeline: PreprocessPipeline = load_pickle(dir_path / "pipeline.pickle")
-        features = pd.read_csv(dir_path / "features.csv")["0"].tolist()
-        X = pipeline.transform(test).filter(features)
+        model_type = model_config["model_type"]
+        dataset_dir = config.input_dir / model_config["dataset"]  # type: ignore
+        weight = model_config["weight"]
 
-        # load model
-        if config.model_type != "nn":
-            model = GBDTBaseModel.load(dir_path / "model.pickle")
-        else:
-            transformer: TabularDataTransformer = load_pickle(dir_path / "transformer.pickle")
-            X = transformer.transform(X)
-            model = NNModel.load(dir_path / "model.pth")
+        # feature engineering
+        feature_processor: FeatureProcessor = load_pickle(dataset_dir / "feature_processor.pickle")
+        feature_processor.disable_feature_store()
+        test_processed = feature_processor.transform(test.to_pandas())
 
-        # predict
-        pred = model.predict(X)
-        pred = postprocess(pred)
-        preds.append(pred)
+        preds = []
 
-    prediction = np.stack(preds).mean(axis=0)
+        for dir_path in tqdm(dataset_dir.glob("fold_*")):
+            # process test data
+            pipeline: PreprocessPipeline = load_pickle(dir_path / "pipeline.pickle")
+            features = pd.read_csv(dir_path / "features.csv")["0"].tolist()
+            X = pipeline.transform(test_processed).filter(features)
 
-    return submission.with_columns(pl.Series("utility_agent1", prediction))
+            # load model
+            if model_type != "nn":
+                model = GBDTBaseModel.load(dir_path / "model.pickle")
+            else:
+                transformer: TabularDataTransformer = load_pickle(dir_path / "transformer.pickle")
+                X = transformer.transform(X)
+                model = NNModel.load(dir_path / "model.pth")
+
+            # predict
+            pred = postprocess(model.predict(X))
+            preds.append(pred)
+
+        prediction = np.stack(preds).mean(axis=0)
+        predictions.append(prediction * weight)
+
+    ensemble_prediction = np.stack(predictions).sum(axis=0)
+    return submission.with_columns(pl.Series("utility_agent1", ensemble_prediction))
 
 
 def main() -> None:
