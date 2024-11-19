@@ -67,11 +67,7 @@ class FeatureProcessor(TransformerMixin, BaseEstimator):
     A class for processing features.
     """
 
-    def __init__(
-        self,
-        feature_expressions: FeatureExpressions,
-        feature_store: FeatureStore | None = None,
-    ) -> None:
+    def __init__(self, feature_expressions: FeatureExpressions, feature_store: FeatureStore | None = None) -> None:
         self._feature_expressions = feature_expressions
         self._feature_store = feature_store
 
