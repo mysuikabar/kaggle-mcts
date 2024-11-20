@@ -60,7 +60,7 @@ def main(config: Config) -> None:
 
     # load data
     df = pd.read_csv(config.data_path)
-    X, y = df.drop(columns=[config.target]), df[config.target].values
+    X, y = df.drop(columns=[config.target]), df[config.target]
     logger.info(f"Raw data shape: {df.shape}")
 
     # feature engineering
@@ -71,7 +71,7 @@ def main(config: Config) -> None:
 
     # cross validation
     model_factory = ModelFactory()
-    oof = np.zeros(len(y))
+    oof = pd.Series(np.zeros(len(X)), index=X.index, name="oof")
     fold_assignments = pd.read_csv(config.fold_assignment_path, index_col=0)["fold"]
 
     for fold in sorted(fold_assignments.unique()):
@@ -120,6 +120,7 @@ def main(config: Config) -> None:
 
         # predict
         oof[idx_va] = postprocess(model.predict(X_va))
+        oof.to_csv("oof.csv")
 
     # evaluate
     metrics = calculate_metrics(y, oof, fold_assignments)
