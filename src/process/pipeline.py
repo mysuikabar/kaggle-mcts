@@ -66,4 +66,4 @@ class PreprocessPipeline(TransformerMixin, BaseEstimator):
 
 
 def postprocess(pred: np.ndarray) -> np.ndarray:
-    return np.clip(pred, -1, 1)
+    return np.clip(pred * 1.1, -0.985, 0.985)  # np.clip(pred, -1, 1)
