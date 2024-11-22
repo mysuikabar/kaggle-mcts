@@ -103,7 +103,7 @@ def main(config: Config) -> None:
             model = model_factory.build(config.model.type, **config.model.config)
             model.fit(X_tr, y_tr, X_va, y_va)
             model.save(output_dir / "model.pickle")
-            model.feature_importance.to_csv(output_dir / "importance.csv", index=False)
+            model.feature_importance.sort_values("importance", ascending=False).to_csv(output_dir / "importance.csv", index=False)
         else:
             transformer = TabularDataTransformer()
             X_tr, X_va = transformer.fit_transform(X_tr), transformer.transform(X_va)
@@ -115,7 +115,7 @@ def main(config: Config) -> None:
                 categorical_feature_dims=transformer.n_categories_,
                 **to_primitive(config.model.config),
             )
-            model.fit(X_tr, y_tr, X_va, y_va)
+            model.fit(X_tr, y_tr.values, X_va, y_va.values)
             model.save(output_dir / "model.pth")
 
         # predict
