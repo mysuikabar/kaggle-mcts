@@ -54,53 +54,18 @@ feature_expressions_master["baseline_features"] = [
 ]
 
 
-feature_expressions_master["LudRules_features"] = [
-    # Basic text features
-    pl.col("LudRules").str.len_chars().alias("total_length"),
-    (pl.col("LudRules").str.count_matches(r"\(") + pl.col("LudRules").str.count_matches(r"\)")).alias("num_parentheses"),
-    # Game phases
-    pl.col("LudRules").str.contains("phases:").alias("has_phases"),
-    pl.col("LudRules").str.count_matches(r'\(phase\s+"[^"]+"').alias("num_phases"),
-    # Game components
-    pl.col("LudRules").str.count_matches(r'\(place\s+"[^"]+"').alias("num_pieces"),
-    pl.col("LudRules").str.contains("roll").alias("has_dice"),
-    # Game mechanics
-    pl.col("LudRules").str.contains("move").alias("has_movement"),
-    pl.col("LudRules").str.contains("remove").alias("has_capture"),
-    pl.col("LudRules").str.contains("Add").alias("has_addition"),
-    pl.col("LudRules").str.contains("Threatened").alias("has_threats"),
-    pl.col("LudRules").str.contains("is Line").alias("has_line_victory"),
-    pl.col("LudRules").str.contains("is Connected").alias("has_connection_victory"),
-    pl.col("LudRules").str.contains("no Pieces").alias("has_piece_count_victory"),
-    # Board features
-    pl.col("LudRules").str.contains(r"sites Row").alias("uses_rows"),
-    pl.col("LudRules").str.contains(r"sites Col").alias("uses_columns"),
-    (
-        pl.col("LudRules").str.contains("NE")
-        | pl.col("LudRules").str.contains("SE")
-        | pl.col("LudRules").str.contains("NW")
-        | pl.col("LudRules").str.contains("SW")
-    ).alias("uses_diagonals"),
-    pl.col("LudRules").str.contains("Orthogonal").alias("uses_orthogonal"),
-    # Game state tracking
-    pl.col("LudRules").str.contains("counter").alias("uses_counter"),
-    pl.col("LudRules").str.contains("remember").alias("uses_memory"),
-    # Control flow
-    pl.col("LudRules").str.count_matches("if:").alias("num_conditionals"),
-    pl.col("LudRules").str.count_matches("then").alias("num_then"),
-    pl.col("LudRules").str.contains("moveAgain").alias("move_again_allowed"),
-    # Operation counts
-    pl.col("LudRules").str.count_matches(r"\(move\s").alias("num_move_operations"),
-    pl.col("LudRules").str.count_matches(r"\(remove\s").alias("num_remove_operations"),
-    pl.col("LudRules").str.count_matches(r"\(place\s").alias("num_place_operations"),
-    pl.col("LudRules").str.count_matches(r"\(roll\s").alias("num_roll_operations"),
-    pl.col("LudRules").str.count_matches(r"\(add\s").alias("num_add_operations"),
-    # Victory conditions
-    pl.col("LudRules").str.count_matches(r"\(result\s+\w+\s+Win\)").alias("num_win_conditions"),
-    pl.col("LudRules").str.count_matches(r"\(result\s+\w+\s+Draw\)").alias("num_draw_conditions"),
-    # Complexity indicators
-    pl.col("LudRules").str.count_matches(r"\([a-zA-Z]+\s").alias("num_commands"),
-    # Movement patterns
-    pl.col("LudRules").str.contains(r"steps:\d+").alias("has_linear_movement"),
-    pl.col("LudRules").str.contains("sites Around").alias("has_adjacent_movement"),
+feature_expressions_master["lud_rules_features"] = [
+    pl.col("LudRules_equipment").str.extract(r"\{ \((.*?) ").alias("LudRules_equipment_type"),
+    pl.col("LudRules_equipment").str.extract(r"\{ \(board \((.*?) ").fill_null("None").alias("LudRules_equipment_board"),
+    pl.col("LudRules_equipment").str.count_matches("piece").alias("LudRules_equipment_piece_count"),
+    pl.col("LudRules_rules").str.len_chars().alias("LudRules_rules_len"),
+    pl.col("LudRules_rules").str.extract(r"\(start (.*) \(play").str.len_chars().fill_null(0).alias("LudRules_rules_start_len"),
+    pl.col("LudRules_rules").str.extract(r"\(play (.*) \(end").str.len_chars().alias("LudRules_rules_play_len"),
+    pl.col("LudRules_rules").str.extract(r"\(end (.*)").str.len_chars().alias("LudRules_rules_end_len"),
+    pl.col("LudRules_rules").str.count_matches("\(").alias("LudRules_rules_parenthesis_count"),
+    pl.col("LudRules_rules").str.count_matches("if").alias("LudRules_rules_if_count"),
+    ~pl.col("LudRules_rules").str.contains(r"start").alias("LudRules_rules_not_contains_start"),
+    pl.col("LudRules_rules").str.contains("Draw").alias("LudRules_rules_contains_Draw"),
+    pl.col("LudRules_rules").str.contains("byScore").alias("LudRules_rules_contains_byScore"),
+    pl.col("LudRules_rules").str.contains("phases").alias("LudRules_rules_contains_phases"),
 ]
