@@ -80,23 +80,24 @@ class FeatureProcessor(TransformerMixin, BaseEstimator):
         """
         df_result = pl.DataFrame(X)
 
-        if self._feature_store is None:
-            expressions = [expr for exprs in self._feature_expressions.values() for expr in exprs]
-            return df_result.with_columns(expressions).to_pandas()
-
-        # when feature store is given
         for feature_name, expressions in self._feature_expressions.items():
-            try:
-                feature = self._feature_store.load(feature_name)
-                if len(feature) != len(df_result):
-                    raise ValueError(
-                        f"Loaded feature '{feature_name}' has {len(feature)} rows, but df_result has {len(df_result)} rows. Row counts must match."
-                    )
+            # when feature store is not enabled
+            if self._feature_store is None:
+                df_result = df_result.with_columns(expressions)
+
+            # when feature store is enabled
+            else:
+                try:
+                    feature = self._feature_store.load(feature_name)
+                    if len(feature) != len(df_result):
+                        raise ValueError(
+                            f"Loaded feature '{feature_name}' has {len(feature)} rows, but df_result has {len(df_result)} rows. Row counts must match."
+                        )
+                except FileNotFoundError:
+                    feature = df_result.select(expressions)
+                    self._feature_store.save(feature, feature_name)
+
                 df_result = df_result.hstack(feature)
-            except FileNotFoundError:
-                new_feature = df_result.select(expressions)
-                self._feature_store.save(new_feature, feature_name)
-                df_result = df_result.hstack(new_feature)
 
         return df_result.to_pandas()
 
