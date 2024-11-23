@@ -1,6 +1,6 @@
 import polars as pl
 
-from process.consts import AGENT_PATTERN, LUD_RULES_PATTERN
+from process.consts import AGENT_PATTERN, AGENT_TYPES, LUD_RULES_PATTERN
 from process.feature import FeatureExpressions
 
 feature_expressions_master = FeatureExpressions()
@@ -68,4 +68,10 @@ feature_expressions_master["lud_rules_features"] = [
     pl.col("LudRules_rules").str.contains("Draw").alias("LudRules_rules_contains_Draw"),
     pl.col("LudRules_rules").str.contains("byScore").alias("LudRules_rules_contains_byScore"),
     pl.col("LudRules_rules").str.contains("phases").alias("LudRules_rules_contains_phases"),
+]
+
+# ref: https://www.kaggle.com/code/yunsuxiaozi/mcts-starter
+feature_expressions_master["agent_encoded_features"] = [
+    pl.when(pl.col("agent1").eq(agent)).then(1).when(pl.col("agent2").eq(agent)).then(-1).otherwise(0).alias(f"agent_{agent}")
+    for agent in AGENT_TYPES
 ]
