@@ -1,7 +1,9 @@
+# ref: https://www.kaggle.com/code/yunsuxiaozi/mcts-starter
 import polars as pl
 
 from process.consts import AGENT_PATTERN, AGENT_TYPES, LUD_RULES_PATTERN
 from process.feature import FeatureExpressions
+from process.text import ari, clri, mcalpine_eflaw
 
 feature_expressions_master = FeatureExpressions()
 
@@ -17,7 +19,6 @@ feature_expressions_master["agent_property"] = [
     pl.col("agent2").str.extract(AGENT_PATTERN, 4).alias("p2_bounds"),
 ]
 
-
 feature_expressions_master["lud_rules"] = [
     pl.col("LudRules").str.extract(LUD_RULES_PATTERN, 1).alias("LudRules_game"),
     pl.col("LudRules").str.extract(LUD_RULES_PATTERN, 2).alias("LudRules_players"),
@@ -25,8 +26,6 @@ feature_expressions_master["lud_rules"] = [
     pl.col("LudRules").str.extract(LUD_RULES_PATTERN, 4).alias("LudRules_rules"),
 ]
 
-
-# ref: https://www.kaggle.com/code/yunsuxiaozi/mcts-starter
 feature_expressions_master["baseline_features"] = [
     (pl.col("NumRows") * pl.col("NumColumns")).alias("area"),
     (pl.col("NumColumns").eq(pl.col("NumRows"))).cast(pl.Int8).alias("row_equal_col"),
@@ -53,7 +52,6 @@ feature_expressions_master["baseline_features"] = [
     # pl.col("MovesPerSecond").clip(0, 1000000),
 ]
 
-
 feature_expressions_master["lud_rules_features"] = [
     pl.col("LudRules_equipment").str.extract(r"\{ \((.*?) ").alias("LudRules_equipment_type"),
     pl.col("LudRules_equipment").str.extract(r"\{ \(board \((.*?) ").fill_null("None").alias("LudRules_equipment_board"),
@@ -70,8 +68,14 @@ feature_expressions_master["lud_rules_features"] = [
     pl.col("LudRules_rules").str.contains("phases").alias("LudRules_rules_contains_phases"),
 ]
 
-# ref: https://www.kaggle.com/code/yunsuxiaozi/mcts-starter
 feature_expressions_master["agent_encoded_features"] = [
     pl.when(pl.col("agent1").eq(agent)).then(1).when(pl.col("agent2").eq(agent)).then(-1).otherwise(0).alias(f"agent_{agent}")
     for agent in AGENT_TYPES
+]
+
+feature_expressions_master["english_rules_features"] = [
+    pl.col("EnglishRules").str.len_chars().alias("EnglishRules_len"),
+    pl.col("EnglishRules").map_elements(clri, return_dtype=pl.Float32).alias("EnglishRules_clri"),
+    pl.col("EnglishRules").map_elements(mcalpine_eflaw, return_dtype=pl.Float32).alias("EnglishRules_mcalpine_eflaw"),
+    pl.col("EnglishRules").map_elements(ari, return_dtype=pl.Float32).alias("EnglishRules_ari"),
 ]
