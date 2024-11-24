@@ -57,7 +57,7 @@ feature_expressions_master["lud_rules_features"] = [
     pl.col("LudRules_equipment").str.extract(r"\{ \(board \((.*?) ").fill_null("None").alias("LudRules_equipment_board"),
     pl.col("LudRules_equipment").str.count_matches("piece").alias("LudRules_equipment_piece_count"),
     pl.col("LudRules_rules").str.len_chars().alias("LudRules_rules_len"),
-    pl.col("LudRules_rules").str.extract(r"\(start (.*) \(play").str.len_chars().fill_null(0).alias("LudRules_rules_start_len"),
+    pl.col("LudRules_rules").str.extract(r"\(start (.*) \(play").str.len_chars().cast(pl.Int32).fill_null(0).alias("LudRules_rules_start_len"),
     pl.col("LudRules_rules").str.extract(r"\(play (.*) \(end").str.len_chars().alias("LudRules_rules_play_len"),
     pl.col("LudRules_rules").str.extract(r"\(end (.*)").str.len_chars().alias("LudRules_rules_end_len"),
     pl.col("LudRules_rules").str.count_matches("\(").alias("LudRules_rules_parenthesis_count"),
