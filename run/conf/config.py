@@ -14,7 +14,16 @@ from .model import (  # noqa: F401
 
 @dataclass
 class FeatureConfig:
-    use_features: list[str] = field(default_factory=lambda: ["agent_property", "lud_rules", "baseline_features"])
+    use_features: list[str] = field(
+        default_factory=lambda: [
+            "agent_property",
+            "lud_rules",
+            "baseline_features",
+            "lud_rules_features",
+            "agent_encoded_features",
+            "english_rules_features",
+        ]
+    )
     store_dir: Path | None = None  # REPO_ROOT / "data/feature_store"
 
 
@@ -50,7 +59,7 @@ class Config:
     data_path: Path = REPO_ROOT / "data/raw/train.csv"
     fold_assignment_path: Path = REPO_ROOT / "outputs/preprocess/mcts-02-preprocess/fold_assignments.csv"
     tfidf_dir: Path | None = REPO_ROOT / "outputs/preprocess/mcts-02-preprocess"  # tfidf
-    importance_dir: Path | None = REPO_ROOT / "outputs/mcts-11-cbt"  #  feature selection
+    importance_dir: Path | None = REPO_ROOT / "outputs/mcts-38-cbt"  #  feature selection
     num_features: int = 500
     feature: FeatureConfig = FeatureConfig()
     model: ModelConfig = ModelConfig()
