@@ -16,6 +16,7 @@ from model.gbdt import GBDTBaseModel
 from model.nn import NNModel
 from process.feature import FeatureProcessor
 from process.pipeline import PreprocessPipeline, postprocess
+from process.text import ari, clri, mcalpine_eflaw  # noqa: F401
 from process.transformers import TabularDataTransformer
 from utils.helper import load_pickle
 
